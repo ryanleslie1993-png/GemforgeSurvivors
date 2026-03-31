@@ -1,0 +1,62 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/end_run_screen.gd" id="1"]
+
+[node name="EndRunScreen" type="CanvasLayer"]
+script = ExtResource("1")
+layer = 20
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -280.0
+offset_right = 380.0
+offset_bottom = 280.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+text = "Run Complete"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+
+[node name="TimeLabel" type="Label" parent="Panel/VBox"]
+text = "Time Survived: 00:00"
+
+[node name="KillsLabel" type="Label" parent="Panel/VBox"]
+text = "Total Enemies Killed: 0"
+
+[node name="DpsLabel" type="Label" parent="Panel/VBox"]
+custom_minimum_size = Vector2(680, 170)
+autowrap_mode = 2
+text = "DPS Breakdown"
+vertical_alignment = 0
+
+[node name="MetaGainLabel" type="Label" parent="Panel/VBox"]
+autowrap_mode = 2
+text = "Meta EXP gained this run: +0"
+
+[node name="MetaClassTotalLabel" type="Label" parent="Panel/VBox"]
+autowrap_mode = 2
+text = "Class — Meta level 1 | 0 / 120 XP toward next level"
+
+[node name="MetaXpBar" type="ProgressBar" parent="Panel/VBox"]
+custom_minimum_size = Vector2(680, 26)
+show_percentage = false
+
+[node name="ReplayButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(680, 56)
+text = "Replay"
+
+[node name="EquipmentButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(680, 56)
+text = "Equipment"
+
+[node name="MenuButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(680, 56)
+text = "Main Menu"

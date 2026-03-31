@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/inventory_screen.gd" id="1"]
+
+[node name="InventoryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="RootVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="RootVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Equipment & Gems"
+horizontal_alignment = 1
+
+[node name="ClassLabel" type="Label" parent="RootVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Class: -"
+
+[node name="Scroll" type="ScrollContainer" parent="RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RichList" type="RichTextLabel" parent="RootVBox/Scroll"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "-"
+
+[node name="BackButton" type="Button" parent="RootVBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Back to Menu"

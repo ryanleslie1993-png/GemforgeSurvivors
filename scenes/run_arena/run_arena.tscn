@@ -1,0 +1,101 @@
+[gd_scene load_steps=4 format=3 uid="uid://dle55qyhmda08"]
+
+[ext_resource type="Script" path="res://scenes/run_arena/run_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://entities/player/simple_player.gd" id="2_simple_player"]
+[ext_resource type="Script" path="res://scenes/run_arena/infinite_grass_layer.gd" id="3_grass"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(56, 56)
+
+[node name="RunArena" type="Node2D"]
+process_mode = 1
+script = ExtResource("1_arena")
+spawn_radius = 800.0
+max_enemies = 30
+
+[node name="Backdrop" type="Node2D" parent="."]
+z_index = -20
+
+[node name="BaseFill" type="ColorRect" parent="Backdrop"]
+z_index = -30
+layout_mode = 0
+position = Vector2(-12000, -12000)
+size = Vector2(24000, 24000)
+mouse_filter = 2
+color = Color(0.0784314, 0.176471, 0.0862745, 1)
+
+[node name="ParallaxWash" type="ColorRect" parent="Backdrop"]
+z_index = -25
+layout_mode = 0
+position = Vector2(-12000, -12000)
+size = Vector2(24000, 24000)
+mouse_filter = 2
+color = Color(0.04, 0.14, 0.06, 0.16)
+
+[node name="GrassFar" type="Node2D" parent="Backdrop"]
+z_index = -22
+script = ExtResource("3_grass")
+tile_size = 160.0
+tiles_half_extent = 10
+parallax_factor = 0.74
+color_a = Color(0.065, 0.19, 0.085, 1)
+color_b = Color(0.095, 0.26, 0.11, 1)
+grid_alpha = 0.12
+
+[node name="GrassNear" type="Node2D" parent="Backdrop"]
+z_index = -21
+script = ExtResource("3_grass")
+tile_size = 88.0
+tiles_half_extent = 14
+parallax_factor = 1.0
+color_a = Color(0.085, 0.24, 0.11, 1)
+color_b = Color(0.12, 0.32, 0.14, 1)
+grid_alpha = 0.22
+
+[node name="Enemies" type="Node2D" parent="."]
+process_mode = 1
+z_index = 1
+
+[node name="Player" type="CharacterBody2D" parent="."]
+process_mode = 1
+z_index = 2
+motion_mode = 1
+collision_layer = 1
+collision_mask = 2
+position = Vector2(0, 0)
+script = ExtResource("2_simple_player")
+
+[node name="HealthBar" type="ProgressBar" parent="Player"]
+mouse_filter = 2
+z_index = 10
+layout_mode = 0
+anchors_preset = 0
+offset_left = -42.0
+offset_top = -58.0
+offset_right = 42.0
+offset_bottom = -44.0
+max_value = 120.0
+value = 120.0
+show_percentage = false
+
+[node name="Visual" type="Node2D" parent="Player"]
+
+[node name="Hull" type="Polygon2D" parent="Player/Visual"]
+color = Color(1, 0.55, 0.12, 1)
+polygon = PackedVector2Array(24, 0, -16, 18, -16, -18)
+
+[node name="EyeLeft" type="Polygon2D" parent="Player/Visual"]
+color = Color(0.08, 0.08, 0.1, 1)
+polygon = PackedVector2Array(0, -10, 6, -10, 6, -4, 0, -4)
+
+[node name="EyeRight" type="Polygon2D" parent="Player/Visual"]
+color = Color(0.08, 0.08, 0.1, 1)
+polygon = PackedVector2Array(0, 4, 6, 4, 6, 10, 0, 10)
+
+[node name="Collision" type="CollisionShape2D" parent="Player"]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+current = true
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0

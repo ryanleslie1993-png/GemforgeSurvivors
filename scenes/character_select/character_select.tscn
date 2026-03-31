@@ -1,0 +1,248 @@
+[gd_scene load_steps=2 format=3 uid="uid://d2b68do47h4nh"]
+
+[ext_resource type="Script" path="res://scenes/character_select/character_select.gd" id="1_script"]
+
+[node name="CharacterSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="ScreenMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="MainVBox" type="VBoxContainer" parent="ScreenMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="MainHBox" type="HBoxContainer" parent="ScreenMargin/MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="ClassListScroll" type="ScrollContainer" parent="ScreenMargin/MainVBox/MainHBox"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.42
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="ClassList" type="VBoxContainer" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 14
+
+[node name="ClassListTitle" type="Label" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.86, 0.9, 0.98, 1)
+text = "Choose a class"
+
+[node name="GuardianButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Guardian"
+
+[node name="BerserkerButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Berserker"
+
+[node name="ElementalistButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Elementalist"
+
+[node name="AssassinButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Assassin"
+
+[node name="RangerButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Ranger"
+
+[node name="PaladinButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Paladin"
+
+[node name="DruidButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Druid"
+
+[node name="NecromancerButton" type="Button" parent="ScreenMargin/MainVBox/MainHBox/ClassListScroll/ClassList"]
+custom_minimum_size = Vector2(260, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+text = "Necromancer"
+
+[node name="DetailsScroll" type="ScrollContainer" parent="ScreenMargin/MainVBox/MainHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.58
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="DetailsPanel" type="PanelContainer" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DetailsMargin" type="MarginContainer" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 28
+
+[node name="DetailsColumn" type="VBoxContainer" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="CharacterDetailsLabel" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.88, 0.91, 0.98, 1)
+text = "Character Details"
+
+[node name="NameLabel" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+autowrap_mode = 2
+text = "—"
+
+[node name="HealthLabel" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 2
+text = "Health (run start, +meta): —"
+
+[node name="SpeedLabel" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 2
+text = "Base move speed: —"
+
+[node name="PassiveLabel" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 2
+text = "Unique passive: —"
+
+[node name="MetaTreeHeader" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
+text = "Meta tree (this class)"
+
+[node name="MetaTreeInfoLabel" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.74, 0.77, 0.84, 1)
+autowrap_mode = 2
+text = "—"
+
+[node name="StatsSeparator" type="HSeparator" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsSectionTitle" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.9, 0.94, 1, 1)
+text = "Current Character Stats"
+
+[node name="StatsSectionSubtitle" type="Label" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.66, 0.71, 0.8, 1)
+autowrap_mode = 2
+text = "From unlocked meta nodes — one line per bonus. Scroll this panel if the list is long."
+
+[node name="CharacterStatsRich" type="RichTextLabel" parent="ScreenMargin/MainVBox/MainHBox/DetailsScroll/DetailsPanel/DetailsMargin/DetailsColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/normal_font_size = 16
+theme_override_colors/default_color = Color(0.92, 0.94, 0.98, 1)
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 2
+text = "[i]Select a class to see stats.[/i]"
+
+[node name="BottomBar" type="HBoxContainer" parent="ScreenMargin/MainVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 76)
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="PlayButton" type="Button" parent="ScreenMargin/MainVBox/BottomBar"]
+custom_minimum_size = Vector2(200, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Play Run"
+
+[node name="BackButton" type="Button" parent="ScreenMargin/MainVBox/BottomBar"]
+custom_minimum_size = Vector2(200, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Back to Menu"
+
+[node name="ViewTreeButton" type="Button" parent="ScreenMargin/MainVBox/BottomBar"]
+custom_minimum_size = Vector2(200, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "View Skill Tree"

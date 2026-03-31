@@ -1,0 +1,269 @@
+[gd_scene load_steps=3 format=3 uid="uid://cmeta_skill_tree_scr"]
+
+[ext_resource type="Script" path="res://scenes/meta/meta_skill_tree_screen.gd" id="1_scr"]
+[ext_resource type="Script" path="res://scenes/meta/meta_skill_tree_graph.gd" id="2_graph"]
+
+[node name="MetaSkillTreeScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scr")
+
+[node name="RootVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="RootVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Permanent Meta Skill Tree"
+horizontal_alignment = 1
+
+[node name="TopBar" type="HBoxContainer" parent="RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" type="Button" parent="RootVBox/TopBar"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+text = "Back"
+
+[node name="ClassOption" type="OptionButton" parent="RootVBox/TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 40)
+
+[node name="ClassNameLabel" type="Label" parent="RootVBox/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+size_flags_horizontal = 3
+text = "Class: -"
+
+[node name="MetaXpLine" type="Label" parent="RootVBox/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.78, 0.84, 0.95, 1)
+size_flags_horizontal = 3
+text = "Meta XP: —"
+
+[node name="PointsLabel" type="Label" parent="RootVBox/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Meta Skill Points: —"
+horizontal_alignment = 2
+
+[node name="MainSplit" type="HSplitContainer" parent="RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 560
+
+[node name="LeftPanel" type="PanelContainer" parent="RootVBox/MainSplit"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+size_flags_horizontal = 1
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="RootVBox/MainSplit/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="DetailsStatsSplit" type="VSplitContainer" parent="RootVBox/MainSplit/LeftPanel/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 360
+theme_override_constants/separation = 10
+
+[node name="NodeDetailsScroll" type="ScrollContainer" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+follow_focus = true
+
+[node name="NodeDetailsVBox" type="VBoxContainer" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll"]
+custom_minimum_size = Vector2(468, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="PanelTitle" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Node Details"
+
+[node name="NodeNameLabel" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.75, 0.78, 0.86, 1)
+text = "Name"
+
+[node name="NodeNameValue" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 2
+text = "-"
+
+[node name="BonusLabel" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.75, 0.78, 0.86, 1)
+text = "Bonus"
+
+[node name="BonusValue" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+autowrap_mode = 2
+text = "-"
+
+[node name="DescriptionLabel" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.75, 0.78, 0.86, 1)
+text = "Description"
+
+[node name="DescriptionValue" type="RichTextLabel" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 2
+text = "-"
+
+[node name="CostLabel" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.75, 0.78, 0.86, 1)
+text = "Point Cost"
+
+[node name="CostValue" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 2
+text = "-"
+
+[node name="PrereqLabel" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.75, 0.78, 0.86, 1)
+text = "Prerequisites"
+
+[node name="PrereqValue" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 2
+text = "-"
+
+[node name="StatusLabel" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.75, 0.78, 0.86, 1)
+text = "Status"
+
+[node name="StatusValue" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 2
+text = "Locked"
+
+[node name="StatsSection" type="VBoxContainer" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit"]
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="StatsTitle" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/StatsSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.88, 0.93, 1, 1)
+text = "Current Character Stats"
+
+[node name="StatsSubtitle" type="Label" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/StatsSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.68, 0.72, 0.8, 1)
+autowrap_mode = 2
+text = "Totals from unlocked meta nodes for this class. One bullet per bonus."
+
+[node name="StatsHeaderSeparator" type="HSeparator" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/StatsSection"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="StatsScroll" type="ScrollContainer" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/StatsSection"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="StatsRich" type="RichTextLabel" parent="RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/StatsSection/StatsScroll"]
+custom_minimum_size = Vector2(448, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/normal_font_size = 16
+theme_override_colors/default_color = Color(0.92, 0.94, 0.98, 1)
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 2
+text = "-"
+
+[node name="RightPanel" type="PanelContainer" parent="RootVBox/MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TreeScroll" type="ScrollContainer" parent="RootVBox/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 2
+
+[node name="MetaSkillTreeGraph" type="Control" parent="RootVBox/MainSplit/RightPanel/TreeScroll"]
+custom_minimum_size = Vector2(3400, 2450)
+layout_mode = 2
+script = ExtResource("2_graph")
+
+[node name="BottomBar" type="HBoxContainer" parent="RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="UnlockButton" type="Button" parent="RootVBox/BottomBar"]
+custom_minimum_size = Vector2(440, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Unlock Selected Node"
+
+[node name="ResetButton" type="Button" parent="RootVBox/BottomBar"]
+custom_minimum_size = Vector2(240, 60)
+layout_mode = 2
+text = "Reset Tree"
