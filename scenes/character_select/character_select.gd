@@ -54,6 +54,7 @@ func _ready() -> void:
 	$ScreenMargin/MainVBox/BottomBar/BackButton.pressed.connect(_on_back_pressed)
 	$ScreenMargin/MainVBox/BottomBar/PlayButton.pressed.connect(_on_play_pressed)
 	$ScreenMargin/MainVBox/BottomBar/ViewTreeButton.pressed.connect(_on_view_tree_pressed)
+	$ScreenMargin/MainVBox/BottomBar/EquipmentButton.pressed.connect(_on_equipment_pressed)
 
 	_details_scroll.resized.connect(_on_details_scroll_resized)
 	_class_list_scroll.resized.connect(_on_class_list_scroll_resized)
@@ -238,3 +239,14 @@ func _on_view_tree_pressed() -> void:
 	GameManager.current_class = class_data
 	print("Opening Meta Skill Tree for ", target_class)
 	get_tree().change_scene_to_file("res://scenes/meta/meta_skill_tree_screen.tscn")
+
+
+func _on_equipment_pressed() -> void:
+	var target_class := selected_class
+	if target_class == "":
+		target_class = "Guardian"
+	var class_data := ClassData.new()
+	class_data.character_class_name = target_class
+	GameManager.current_class = class_data
+	print("Opening Equipment & Gems for ", target_class)
+	get_tree().change_scene_to_file("res://scenes/ui/inventory_screen.tscn")

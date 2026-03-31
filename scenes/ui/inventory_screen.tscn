@@ -11,44 +11,137 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="RootVBox" type="VBoxContainer" parent="."]
+[node name="ScreenMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 20.0
-offset_right = -24.0
-offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
+
+[node name="RootVBox" type="VBoxContainer" parent="ScreenMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="RootVBox"]
+[node name="HeaderHBox" type="HBoxContainer" parent="ScreenMargin/RootVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "Equipment & Gems"
-horizontal_alignment = 1
+theme_override_constants/separation = 20
 
-[node name="ClassLabel" type="Label" parent="RootVBox"]
+[node name="Title" type="Label" parent="ScreenMargin/RootVBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 32
+text = "Equipment & Gems"
+
+[node name="ClassLabel" type="Label" parent="ScreenMargin/RootVBox/HeaderHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
+horizontal_alignment = 2
 text = "Class: -"
 
-[node name="Scroll" type="ScrollContainer" parent="RootVBox"]
+[node name="MainHBox" type="HBoxContainer" parent="ScreenMargin/RootVBox"]
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="EquippedPanel" type="PanelContainer" parent="ScreenMargin/RootVBox/MainHBox"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.45
+
+[node name="EquippedMargin" type="MarginContainer" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="EquippedVBox" type="VBoxContainer" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="EquippedTitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin/EquippedVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Equipped Gear"
+
+[node name="EquippedSubtitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin/EquippedVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.67, 0.71, 0.79, 1)
+autowrap_mode = 2
+text = "Slots with gem sockets (placeholder visuals for now)."
+
+[node name="EquippedGrid" type="GridContainer" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin/EquippedVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 1
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="InventoryPanel" type="PanelContainer" parent="ScreenMargin/RootVBox/MainHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.55
+
+[node name="InventoryMargin" type="MarginContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="InventoryVBox" type="VBoxContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="InventoryTitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Inventory"
+
+[node name="InventorySubtitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.67, 0.71, 0.79, 1)
+autowrap_mode = 2
+text = "Scrollable stash of gear and gems (placeholder slots)."
+
+[node name="InventoryScroll" type="ScrollContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
 
-[node name="RichList" type="RichTextLabel" parent="RootVBox/Scroll"]
+[node name="InventoryGrid" type="GridContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox/InventoryScroll"]
+custom_minimum_size = Vector2(0, 520)
 layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-fit_content = true
-scroll_active = false
-text = "-"
+size_flags_horizontal = 3
+columns = 6
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
-[node name="BackButton" type="Button" parent="RootVBox"]
-custom_minimum_size = Vector2(0, 52)
+[node name="BottomBar" type="HBoxContainer" parent="ScreenMargin/RootVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+alignment = 1
+
+[node name="BackButton" type="Button" parent="ScreenMargin/RootVBox/BottomBar"]
+custom_minimum_size = Vector2(260, 52)
 layout_mode = 2
 text = "Back to Menu"
