@@ -25,11 +25,13 @@ func _on_play_pressed() -> void:
 
 
 func _on_blacksmith_pressed() -> void:
-	print("Blacksmith (placeholder)")
+	print("Opening Equipment & Gems (Blacksmith)")
+	get_tree().change_scene_to_file("res://scenes/ui/inventory_screen.tscn")
 
 
 func _on_gemsmith_pressed() -> void:
-	print("Gemsmith (placeholder)")
+	print("Opening Equipment & Gems (Gemsmith)")
+	get_tree().change_scene_to_file("res://scenes/ui/inventory_screen.tscn")
 
 
 func _on_inventory_pressed() -> void:

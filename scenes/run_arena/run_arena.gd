@@ -354,6 +354,11 @@ func open_chest(at: Vector2) -> void:
 		var gem_name := _roll_random_unlocked_skill_gem()
 		print("Very rare chest roll: socketed skill gem -> ", gem_name)
 		popup_lines.append("Received %s Gem" % gem_name)
+	if randf() < 0.015:
+		var class_key := _run_class_id()
+		GameManager.add_blank_gems(class_key, 1)
+		popup_lines.append("Received Blank Gem")
+		print("Chest drop: Blank Gem for class ", class_key)
 	if LOOT_POPUP_SCENE:
 		var pop: Node = LOOT_POPUP_SCENE.instantiate()
 		if pop.has_method("setup"):
@@ -370,6 +375,10 @@ func _drop_boss_rewards(at: Vector2) -> void:
 		add_child(orb)
 	if randf() < 0.30:
 		print("Boss dropped socketed skill gem -> ", _roll_random_unlocked_skill_gem())
+	if randf() < 0.35:
+		var class_key2 := _run_class_id()
+		GameManager.add_blank_gems(class_key2, 1)
+		print("Boss dropped Blank Gem for class ", class_key2)
 
 
 func _drop_common_materials(at: Vector2, amount: int) -> void:
@@ -449,12 +458,15 @@ func _end_run(reason: String) -> void:
 	var run_class: String = _run_class_id()
 	var meta_gain: int = _compute_meta_xp_for_run()
 	if run_class != "":
-		MetaProgression.add_meta_xp(run_class, meta_gain)
+		MetaProgression.add_meta_xp(meta_gain, run_class)
 	else:
 		push_warning("Run ended with no class in GameManager — meta XP not awarded (would have been %d)" % meta_gain)
 	var meta: Dictionary = {"level": 1, "exp": 0, "next": 120}
 	if run_class != "":
 		meta = MetaProgression.get_meta_level_data_for_class(run_class)
+	var class_points: int = 0
+	if run_class != "":
+		class_points = MetaProgression.get_points(run_class)
 	var rows: Array = []
 	for k in _damage_by_skill.keys():
 		rows.append({"skill": str(k), "damage": int(_damage_by_skill[k])})
@@ -471,6 +483,7 @@ func _end_run(reason: String) -> void:
 			int(meta["level"]),
 			int(meta["exp"]),
 			int(meta["next"]),
+			class_points,
 			meta_gain,
 			end_title
 		)

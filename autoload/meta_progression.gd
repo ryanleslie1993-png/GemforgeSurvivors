@@ -59,33 +59,45 @@ func add_points(class_id: String, amount: int) -> void:
 	print("Meta: +", amount, " points for ", class_id)
 
 
-func _exp_to_next_for_level(level: int) -> int:
-	return 120 + (level - 1) * 45
+func get_required_meta_exp_for_next_level(level: int) -> int:
+	# Early levels are tuned explicitly, then continue with a smooth scaling curve.
+	match level:
+		1:
+			return 1000
+		2:
+			return 1500
+		3:
+			return 2200
+		4:
+			return 3100
+		_:
+			return int(round(950.0 * pow(float(level), 1.4)))
 
 
-## Adds meta XP for the class that played the run; levels up and saves immediately.
-func add_meta_xp(class_id: String, amount: int) -> void:
+## Adds meta XP for a class, levels up repeatedly, awards +1 meta point per level.
+func add_meta_xp(amount: int, class_key: String) -> void:
 	if amount <= 0:
 		return
-	if class_id == "":
-		push_warning("MetaProgression.add_meta_xp: empty class_id — XP not applied (amount was %d)" % amount)
+	if class_key == "":
+		push_warning("MetaProgression.add_meta_xp: empty class_key - XP not applied")
 		return
-	_ensure_class_meta(class_id)
-	var lv: int = int(class_meta_level[class_id])
-	var ex: int = int(class_meta_exp[class_id])
+	_ensure_class_meta(class_key)
+	var lv: int = int(class_meta_level[class_key])
+	var ex: int = int(class_meta_exp[class_key])
 	ex += amount
-	var next_need: int = _exp_to_next_for_level(lv)
-	while ex >= next_need:
+	var next_need: int = get_required_meta_exp_for_next_level(lv)
+	while ex >= next_need and lv < 50:
 		ex -= next_need
 		lv += 1
-		next_need = _exp_to_next_for_level(lv)
-		class_meta_level[class_id] = lv
-		class_meta_exp[class_id] = ex
-		print("Meta level up: ", class_id, " is now level ", lv)
+		meta_points[class_key] = get_points(class_key) + 1
+		next_need = get_required_meta_exp_for_next_level(lv)
+		class_meta_level[class_key] = lv
+		class_meta_exp[class_key] = ex
+		print("Meta Level Up! Class: ", class_key, " New Level: ", lv, " Points: ", get_points(class_key))
 		save_progress()
-	class_meta_level[class_id] = lv
-	class_meta_exp[class_id] = ex
-	print("Meta EXP gained: ", amount, " for class ", class_id, " → Lv ", lv, " (", ex, "/", next_need, ")")
+	class_meta_level[class_key] = lv
+	class_meta_exp[class_key] = ex
+	print("Meta XP added: ", amount, " to ", class_key, " | Current Level: ", lv, " | EXP: ", ex, "/", next_need)
 	save_progress()
 
 
@@ -94,7 +106,7 @@ func get_meta_level_data_for_class(class_id: String) -> Dictionary:
 	_ensure_class_meta(class_id)
 	var lv: int = int(class_meta_level[class_id])
 	var ex: int = int(class_meta_exp[class_id])
-	var nxt: int = _exp_to_next_for_level(lv)
+	var nxt: int = get_required_meta_exp_for_next_level(lv)
 	return {"level": lv, "exp": ex, "next": nxt}
 
 

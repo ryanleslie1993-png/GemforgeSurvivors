@@ -11,137 +11,283 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="ScreenMargin" type="MarginContainer" parent="."]
+[node name="MainMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
 
-[node name="RootVBox" type="VBoxContainer" parent="ScreenMargin"]
+[node name="RootVBox" type="VBoxContainer" parent="MainMargin"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 14
 
-[node name="HeaderHBox" type="HBoxContainer" parent="ScreenMargin/RootVBox"]
+[node name="TitleLabel" type="Label" parent="MainMargin/RootVBox"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_font_sizes/font_size = 30
+text = "Equipment & Gems - Guardian"
+horizontal_alignment = 1
 
-[node name="Title" type="Label" parent="ScreenMargin/RootVBox/HeaderHBox"]
+[node name="TopArea" type="HBoxContainer" parent="MainMargin/RootVBox"]
+custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 32
-text = "Equipment & Gems"
-
-[node name="ClassLabel" type="Label" parent="ScreenMargin/RootVBox/HeaderHBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-horizontal_alignment = 2
-text = "Class: -"
-
-[node name="MainHBox" type="HBoxContainer" parent="ScreenMargin/RootVBox"]
-layout_mode = 2
-size_flags_vertical = 3
+size_flags_vertical = 1
 theme_override_constants/separation = 16
 
-[node name="EquippedPanel" type="PanelContainer" parent="ScreenMargin/RootVBox/MainHBox"]
-custom_minimum_size = Vector2(420, 0)
+[node name="LeftPanel" type="VBoxContainer" parent="MainMargin/RootVBox/TopArea"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+size_flags_horizontal = 1
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="EquippedSection" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 0.45
 
-[node name="EquippedMargin" type="MarginContainer" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel"]
+[node name="EquippedMargin" type="MarginContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 14
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="EquippedVBox" type="VBoxContainer" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin"]
+[node name="EquippedVBox" type="VBoxContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="EquippedTitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin/EquippedVBox"]
+[node name="EquippedTitle" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "Equipped Gear"
+theme_override_font_sizes/font_size = 20
+text = "Equipped Slots"
 
-[node name="EquippedSubtitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin/EquippedVBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.67, 0.71, 0.79, 1)
-autowrap_mode = 2
-text = "Slots with gem sockets (placeholder visuals for now)."
-
-[node name="EquippedGrid" type="GridContainer" parent="ScreenMargin/RootVBox/MainHBox/EquippedPanel/EquippedMargin/EquippedVBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-columns = 1
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
-
-[node name="InventoryPanel" type="PanelContainer" parent="ScreenMargin/RootVBox/MainHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 0.55
-
-[node name="InventoryMargin" type="MarginContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 14
-
-[node name="InventoryVBox" type="VBoxContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin"]
+[node name="EquippedLayout" type="HBoxContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="InventoryTitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox"]
+[node name="CoreSlots" type="VBoxContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="TopRow" type="HBoxContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="WeaponSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow/WeaponSlot"]
+layout_mode = 2
+text = "Weapon"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HelmSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow/HelmSlot"]
+layout_mode = 2
+text = "Helm"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OffHandSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow/OffHandSlot"]
+layout_mode = 2
+text = "Off Hand"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AmuletSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/TopRow/AmuletSlot"]
+layout_mode = 2
+text = "Amulet"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomRow" type="HBoxContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="GloveSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow/GloveSlot"]
+layout_mode = 2
+text = "Glove"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ChestSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow/ChestSlot"]
+layout_mode = 2
+text = "Chest"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PantsSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow/PantsSlot"]
+layout_mode = 2
+text = "Pants"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BootSlot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow"]
+custom_minimum_size = Vector2(95, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/CoreSlots/BottomRow/BootSlot"]
+layout_mode = 2
+text = "Boot"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RingColumn" type="VBoxContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Ring1Slot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/RingColumn"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/RingColumn/Ring1Slot"]
+layout_mode = 2
+text = "Ring 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Ring2Slot" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/RingColumn"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/EquippedSection/EquippedMargin/EquippedVBox/EquippedLayout/RingColumn/Ring2Slot"]
+layout_mode = 2
+text = "Ring 2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatsSection" type="PanelContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsMargin" type="MarginContainer" parent="MainMargin/RootVBox/TopArea/LeftPanel/StatsSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="StatsLabel" type="Label" parent="MainMargin/RootVBox/TopArea/LeftPanel/StatsSection/StatsMargin"]
+layout_mode = 2
+text = "Character Stats\n- Damage: --\n- Defense: --\n- Speed: --"
+
+[node name="TopRightSpacer" type="PanelContainer" parent="MainMargin/RootVBox/TopArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="InventorySection" type="PanelContainer" parent="MainMargin/RootVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="InventoryMargin" type="MarginContainer" parent="MainMargin/RootVBox/InventorySection"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="InventoryVBox" type="VBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="InventoryTitle" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/InventoryVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Inventory"
 
-[node name="InventorySubtitle" type="Label" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.67, 0.71, 0.79, 1)
-autowrap_mode = 2
-text = "Scrollable stash of gear and gems (placeholder slots)."
-
-[node name="InventoryScroll" type="ScrollContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox"]
+[node name="InventoryScroll" type="ScrollContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/InventoryVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 2
 
-[node name="InventoryGrid" type="GridContainer" parent="ScreenMargin/RootVBox/MainHBox/InventoryPanel/InventoryMargin/InventoryVBox/InventoryScroll"]
-custom_minimum_size = Vector2(0, 520)
+[node name="InventoryGrid" type="GridContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/InventoryVBox/InventoryScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-columns = 6
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
+columns = 7
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
 
-[node name="BottomBar" type="HBoxContainer" parent="ScreenMargin/RootVBox"]
+[node name="BottomBar" type="HBoxContainer" parent="MainMargin/RootVBox"]
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 56)
 alignment = 1
+theme_override_constants/separation = 12
 
-[node name="BackButton" type="Button" parent="ScreenMargin/RootVBox/BottomBar"]
-custom_minimum_size = Vector2(260, 52)
+[node name="BlacksmithButton" type="Button" parent="MainMargin/RootVBox/BottomBar"]
+custom_minimum_size = Vector2(180, 44)
 layout_mode = 2
-text = "Back to Menu"
+text = "Blacksmith"
+
+[node name="GemsmithButton" type="Button" parent="MainMargin/RootVBox/BottomBar"]
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+text = "Gemsmith"
+
+[node name="MainMenuButton" type="Button" parent="MainMargin/RootVBox/BottomBar"]
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+text = "Main Menu"

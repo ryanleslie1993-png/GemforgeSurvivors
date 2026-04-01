@@ -127,6 +127,12 @@ func refresh_unlock_state() -> void:
 	queue_redraw()
 
 
+func get_node_center(node_id: String) -> Vector2:
+	if _node_centers.has(node_id):
+		return _node_centers[node_id]
+	return Vector2(-1, -1)
+
+
 func _refresh_all_buttons() -> void:
 	if _class_id == "":
 		return

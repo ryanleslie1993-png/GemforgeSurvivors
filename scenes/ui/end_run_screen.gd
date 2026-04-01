@@ -13,6 +13,7 @@ func show_results(
 	meta_level: int,
 	meta_exp: int,
 	meta_next: int,
+	meta_points: int,
 	meta_gained: int,
 	end_title: String
 ) -> void:
@@ -32,7 +33,7 @@ func show_results(
 	var cls := class_id if class_id != "" else "(no class)"
 	var gained_show: int = maxi(0, meta_gained)
 	$Panel/VBox/MetaGainLabel.text = "Meta EXP gained this run: +%d  |  class: %s" % [gained_show, cls]
-	$Panel/VBox/MetaClassTotalLabel.text = "%s — Meta level %d  |  %d / %d XP toward next level" % [cls, meta_level, meta_exp, maxi(1, meta_next)]
+	$Panel/VBox/MetaClassTotalLabel.text = "%s — Meta level %d  |  Points: %d  |  %d / %d XP toward next level" % [cls, meta_level, meta_points, meta_exp, maxi(1, meta_next)]
 	$Panel/VBox/MetaXpBar.max_value = float(maxi(1, meta_next))
 	$Panel/VBox/MetaXpBar.value = float(clampi(meta_exp, 0, meta_next))
 

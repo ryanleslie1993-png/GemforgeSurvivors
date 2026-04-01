@@ -83,6 +83,11 @@ func _ready():
 		var cid := GameManager.current_class.character_class_name
 		_apply_meta_tree_modifiers(cid)
 		_apply_unique_class_passive(cid)
+		_apply_equipment_modifiers(cid)
+		var gear_gem: SkillGemResource = GameManager.get_equipped_skill_gem_for_class(cid)
+		if gear_gem:
+			equipped_gem = gear_gem
+			print("Loaded socketed gear gem: ", equipped_gem.gem_name)
 	_sync_health_bar()
 	print("XP to next level: ", xp_to_next)
 
@@ -172,6 +177,41 @@ func _apply_meta_tree_modifiers(class_id: String) -> void:
 	necromancer_bone_extra_pierce += int(agg.get("pierce_add", 0))
 	meta_bone_lifesteal_add = int(agg.get("lifesteal_add", 0))
 	print("Meta tree modifiers applied for ", class_id, " (CDR x", snappedf(meta_skill_cdr_mult, 0.01), ", melee reach x", snappedf(meta_melee_range_mult, 0.01), ")")
+
+
+func _apply_equipment_modifiers(class_id: String) -> void:
+	if class_id == "":
+		return
+	var totals: Dictionary = GameManager.get_equipment_stat_totals(class_id)
+	var hp_add: int = int(totals.get("max_health_flat", 0))
+	if hp_add > 0:
+		max_health += hp_add
+		health += hp_add
+	var spd_add: int = int(totals.get("move_speed_flat", 0))
+	if spd_add != 0:
+		speed += float(spd_add)
+	var dmg_add: int = int(totals.get("damage_flat", 0))
+	if dmg_add > 0:
+		stat_damage_mult *= (1.0 + float(dmg_add) * 0.02)
+	var armor_add: int = int(totals.get("armor_flat", 0))
+	if armor_add > 0:
+		incoming_damage_multiplier *= clampf(1.0 - float(armor_add) * 0.01, 0.65, 1.0)
+	var dr_pct: float = float(totals.get("dr_pct", 0.0))
+	if dr_pct > 0.0:
+		incoming_damage_multiplier *= maxf(0.35, 1.0 - dr_pct)
+	var move_pct: float = float(totals.get("move_speed_pct", 0.0))
+	if move_pct > 0.0:
+		speed *= (1.0 + move_pct)
+	var atk_spd_pct: float = float(totals.get("attack_speed_pct", 0.0))
+	if atk_spd_pct > 0.0:
+		stat_attack_speed_mult *= (1.0 + atk_spd_pct)
+	var skill_dmg_pct: float = float(totals.get("skill_damage_pct", 0.0))
+	if skill_dmg_pct > 0.0:
+		stat_damage_mult *= (1.0 + skill_dmg_pct)
+	var cdr_pct: float = float(totals.get("cdr_pct", 0.0))
+	if cdr_pct > 0.0:
+		meta_skill_cdr_mult *= maxf(0.55, 1.0 - cdr_pct)
+	print("Equipment modifiers applied for ", class_id, " => ", totals)
 
 
 func _apply_unique_class_passive(class_id: String) -> void:

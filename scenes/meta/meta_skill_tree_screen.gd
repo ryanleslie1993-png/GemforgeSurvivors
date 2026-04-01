@@ -6,6 +6,7 @@ const Catalog = preload("res://scripts/meta/meta_skill_tree_catalog.gd")
 @onready var _class_name_label: Label = $RootVBox/TopBar/ClassNameLabel
 @onready var _points_label: Label = $RootVBox/TopBar/PointsLabel
 @onready var _meta_xp_line: Label = $RootVBox/TopBar/MetaXpLine
+@onready var _tree_scroll: ScrollContainer = $RootVBox/MainSplit/RightPanel/TreeScroll
 @onready var _graph: Control = $RootVBox/MainSplit/RightPanel/TreeScroll/MetaSkillTreeGraph
 @onready var _name_value: Label = $RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox/NodeNameValue
 @onready var _bonus_value: Label = $RootVBox/MainSplit/LeftPanel/MarginContainer/DetailsStatsSplit/NodeDetailsScroll/NodeDetailsVBox/BonusValue
@@ -78,6 +79,34 @@ func _refresh_for_class(class_id: String) -> void:
 	_unlock_btn.set_meta("pending_node", "")
 	_selected_node_id = ""
 	_update_character_stats_panel(class_id)
+	call_deferred("_center_on_start_node", class_id)
+
+
+func _center_on_start_node(class_id: String) -> void:
+	if class_id == "" or _tree_scroll == null or _graph == null:
+		return
+	var start_node_id: String = Catalog.get_starting_node_id(class_id)
+	if start_node_id == "":
+		return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if not _graph.has_method("get_node_center"):
+		return
+	var center_local: Vector2 = _graph.call("get_node_center", start_node_id)
+	if center_local.x < 0.0 or center_local.y < 0.0:
+		return
+	var viewport_size: Vector2 = _tree_scroll.size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var target_x: float = center_local.x - viewport_size.x * 0.5
+	var target_y: float = center_local.y - viewport_size.y * 0.5
+	var hbar: HScrollBar = _tree_scroll.get_h_scroll_bar()
+	var vbar: VScrollBar = _tree_scroll.get_v_scroll_bar()
+	var max_x: float = hbar.max_value if hbar else 0.0
+	var max_y: float = vbar.max_value if vbar else 0.0
+	_tree_scroll.scroll_horizontal = int(clampf(target_x, 0.0, max_x))
+	_tree_scroll.scroll_vertical = int(clampf(target_y, 0.0, max_y))
+	print("Skill tree centered on starting node: ", start_node_id)
 
 
 func _update_character_stats_panel(class_id: String) -> void:
@@ -112,7 +141,7 @@ func _update_points_label(class_id: String) -> void:
 			_meta_xp_line.text = "Meta XP: —"
 		else:
 			var d: Dictionary = MetaProgression.get_meta_level_data_for_class(class_id)
-			_meta_xp_line.text = "Meta XP — Lv %d — %d / %d toward next" % [int(d["level"]), int(d["exp"]), int(d["next"])]
+			_meta_xp_line.text = "Meta XP — Lv %d — %d / %d toward next — Points: %d" % [int(d["level"]), int(d["exp"]), int(d["next"]), pts]
 
 
 func _on_graph_node_pressed(node_id: String) -> void:
@@ -139,17 +168,45 @@ func _on_graph_node_pressed(node_id: String) -> void:
 
 
 func _on_unlock_pressed() -> void:
-	var class_id: String = _class_id_from_index(_class_option.selected)
-	var nid: String = str(_unlock_btn.get_meta("pending_node", ""))
-	if class_id == "" or nid == "":
+	unlock_selected_node()
+
+
+func unlock_selected_node() -> void:
+	var current_class: String = _class_id_from_index(_class_option.selected)
+	var selected_node_id: String = _selected_node_id
+	if selected_node_id == "":
+		selected_node_id = str(_unlock_btn.get_meta("pending_node", ""))
+	print("Attempting to unlock node: ", selected_node_id, " for class: ", current_class)
+	if current_class == "" or selected_node_id == "":
+		print("Unlock aborted: no class/node selected.")
 		return
-	if MetaProgression.unlock_node(class_id, nid):
-		print("Meta tree: unlocked ", nid, " for ", class_id)
-	_update_points_label(class_id)
-	_update_character_stats_panel(class_id)
+	var row: Dictionary = Catalog.find_node(current_class, selected_node_id)
+	if row.is_empty():
+		print("Unlock aborted: node not found in catalog.")
+		return
+	var node_cost: int = int(row.get("cost", 0))
+	var points_before: int = MetaProgression.get_points(current_class)
+	if points_before < node_cost:
+		print("Unlock failed: not enough meta points (have ", points_before, ", need ", node_cost, ").")
+		_on_graph_node_pressed(selected_node_id)
+		return
+	if not MetaProgression.can_unlock(current_class, selected_node_id):
+		print("Unlock failed: prerequisites not met or node already unlocked.")
+		_on_graph_node_pressed(selected_node_id)
+		return
+	if not MetaProgression.unlock_node(current_class, selected_node_id):
+		print("Unlock failed unexpectedly in MetaProgression.unlock_node.")
+		_on_graph_node_pressed(selected_node_id)
+		return
+	MetaProgression.save_progress()
+	print("Unlock successful! Points remaining: ", MetaProgression.get_points(current_class))
+	_update_points_label(current_class)
+	_update_character_stats_panel(current_class)
 	if _graph.has_method("refresh_unlock_state"):
 		_graph.refresh_unlock_state()
-	_on_graph_node_pressed(nid)
+	if _graph and _graph is CanvasItem:
+		(_graph as CanvasItem).queue_redraw()
+	_on_graph_node_pressed(selected_node_id)
 
 
 func _on_reset_pressed() -> void:

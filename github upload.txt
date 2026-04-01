@@ -1,0 +1,36 @@
+====================================
+GEMFORGE SURVIVORS - UPDATE GUIDE
+====================================
+
+HOW TO PUSH YOUR CHANGES (You):
+
+1. Open PowerShell inside the GemforgeSurvivors folder
+   (Click in empty space → type "powershell" in address bar → Enter)
+
+2. Run these 3 commands one by one:
+
+   git add .
+   git commit -m "short description of changes"
+   git push
+
+Example:
+   git commit -m "fixed inventory screen and skill tree unlocks"
+
+
+HOW YOUR FRIENDS UPDATE:
+
+1. Open PowerShell inside their GemforgeSurvivors folder
+2. Run this command:
+
+   git pull
+
+Then reopen Godot and press F5 to test.
+
+
+Quick Tips:
+- Always run "git pull" before making big changes
+- Write a clear commit message so you know what changed
+- If git push asks for login, use your GitHub username and Personal Access Token
+
+
+Last Updated: March 31, 2026
