@@ -49,6 +49,17 @@ var druid_thorn_slow_factor: float = 0.52
 var necromancer_bone_extra_pierce: int = 0
 var summon_cap_bonus: int = 0
 
+## Skill-state timers for unique behaviors (aura/channel/transforms).
+var _iron_ward_time: float = 0.0
+var _blood_cry_time: float = 0.0
+var _berserk_mode_time: float = 0.0
+var _rapid_fire_time: float = 0.0
+var _smoke_bomb_time: float = 0.0
+var _holy_avenger_time: float = 0.0
+var _bear_form_time: float = 0.0
+var _wolf_form_time: float = 0.0
+var _death_mark_time: float = 0.0
+
 ## Permanent meta skill tree (merged per class in _ready)
 var meta_skill_cdr_mult: float = 1.0
 var meta_damage_while_rage_mult: float = 1.0
@@ -438,7 +449,59 @@ func _roll_outgoing_damage(base_scaled: int) -> int:
 
 
 func _dmg_scaled(base: float, melee_extra: float = 1.0) -> int:
-	return int(round(base * melee_extra * stat_damage_mult))
+	return int(round(base * melee_extra * stat_damage_mult * _skill_temp_damage_mult()))
+
+
+func _skill_temp_damage_mult() -> float:
+	var mult: float = 1.0
+	if _blood_cry_time > 0.0:
+		mult *= 1.30
+	if _berserk_mode_time > 0.0:
+		mult *= 1.45
+	if _holy_avenger_time > 0.0:
+		mult *= 1.28
+	if _bear_form_time > 0.0:
+		mult *= 1.18
+	if _wolf_form_time > 0.0:
+		mult *= 1.15
+	if _death_mark_time > 0.0:
+		mult *= 1.25
+	return mult
+
+
+func _skill_temp_move_mult() -> float:
+	var mult: float = 1.0
+	if _berserk_mode_time > 0.0:
+		mult *= 1.12
+	if _wolf_form_time > 0.0:
+		mult *= 1.35
+	if _bear_form_time > 0.0:
+		mult *= 0.86
+	return mult
+
+
+func _skill_temp_attack_speed_mult() -> float:
+	var mult: float = 1.0
+	if _rapid_fire_time > 0.0:
+		mult *= 1.65
+	if _wolf_form_time > 0.0:
+		mult *= 1.18
+	return mult
+
+
+func _skill_temp_damage_taken_mult() -> float:
+	var mult: float = 1.0
+	if _iron_ward_time > 0.0:
+		mult *= 0.82
+	if _holy_avenger_time > 0.0:
+		mult *= 0.85
+	if _bear_form_time > 0.0:
+		mult *= 0.72
+	if _berserk_mode_time > 0.0:
+		mult *= 1.35
+	if _smoke_bomb_time > 0.0:
+		mult *= 0.90
+	return mult
 
 
 func _gem_projectile_color(gem_name: String) -> Color:
@@ -507,10 +570,21 @@ func _physics_process(delta: float):
 	else:
 		_attack_timer_haste_mult = 1.0
 
+	_iron_ward_time = maxf(0.0, _iron_ward_time - delta)
+	_blood_cry_time = maxf(0.0, _blood_cry_time - delta)
+	_berserk_mode_time = maxf(0.0, _berserk_mode_time - delta)
+	_rapid_fire_time = maxf(0.0, _rapid_fire_time - delta)
+	_smoke_bomb_time = maxf(0.0, _smoke_bomb_time - delta)
+	_holy_avenger_time = maxf(0.0, _holy_avenger_time - delta)
+	_bear_form_time = maxf(0.0, _bear_form_time - delta)
+	_wolf_form_time = maxf(0.0, _wolf_form_time - delta)
+	_death_mark_time = maxf(0.0, _death_mark_time - delta)
+
 	var move_mult: float = 1.0
 	if _shadow_move_time > 0.0:
 		_shadow_move_time -= delta
 		move_mult = 1.24
+	move_mult *= _skill_temp_move_mult()
 	if max_health > 0 and float(health) / float(max_health) <= 0.35:
 		move_mult *= meta_low_hp_move_mult
 
@@ -529,7 +603,7 @@ func _physics_process(delta: float):
 	elif direction.length_squared() > 0.0001:
 		$Visual.rotation = _last_move_dir.angle()
 
-	attack_timer -= delta * _attack_timer_haste_mult * stat_attack_speed_mult
+	attack_timer -= delta * _attack_timer_haste_mult * stat_attack_speed_mult * _skill_temp_attack_speed_mult()
 	if attack_timer <= 0.0 and equipped_gem:
 		attack_timer = _cooldown_after_cast()
 		perform_class_specific_attack()
@@ -547,33 +621,102 @@ func perform_class_specific_attack() -> void:
 	print("Skill used: ", gname)
 	get_tree().call_group("run_arena", "on_player_skill_used", gname)
 
-	if gname == "Thorn Burst":
-		_perform_thorn_burst()
-		_consume_double_damage_swing()
-		return
-
-	var is_melee: bool = gname.contains("Bash") or gname.contains("Slash") or gname.contains("Strike")
-	if is_melee:
-		_perform_melee_attack_named(gname)
-		_consume_double_damage_swing()
-		return
-
-	if gname.contains("Volley"):
-		_perform_arrow_volley()
-		_consume_double_damage_swing()
-		return
-	if gname == "Summon Skeletons":
-		_perform_summon_skeletons()
-		_consume_double_damage_swing()
-		return
-
+	# Skill categories:
+	# - melee / dash / strike
+	# - projectile / chain / explode
+	# - ground_aoe / aura / zone
+	# - channel / transformation / summon
 	match gname:
+		# Guardian
+		"Shield Bash", "Holy Shield Bash":
+			_perform_melee_attack_named("Holy Shield Bash")
+		"Heavy Slam":
+			_perform_heavy_slam()
+		"Iron Ward":
+			_cast_iron_ward()
+		"Judgment":
+			_cast_judgment()
+		"Guardian's Wall":
+			_cast_guardians_wall()
+		# Berserker
+		"Rage Slash":
+			_perform_melee_attack_named("Rage Slash")
+		"Blood Cry":
+			_cast_blood_cry()
+		"Frenzied Charge":
+			_cast_frenzied_charge()
+		"Reckless Swing":
+			_cast_reckless_swing()
+		"Berserk Mode":
+			_cast_berserk_mode()
+		# Elementalist
 		"Fireball":
 			_spawn_fireball()
+		"Lightning Chain":
+			_cast_lightning_chain()
+		"Frost Nova":
+			_cast_frost_nova()
+		"Elemental Overload":
+			_cast_elemental_overload()
+		"Meteor":
+			_cast_meteor()
+		# Assassin
+		"Shadow Strike":
+			_cast_shadow_teleport_strike()
+		"Poison Dagger":
+			_cast_poison_dagger()
+		"Smoke Bomb":
+			_cast_smoke_bomb()
+		"Backstab":
+			_cast_backstab()
+		"Death Mark":
+			_cast_death_mark()
+		# Ranger
+		"Arrow Volley":
+			_perform_arrow_volley()
+		"Explosive Arrow":
+			_cast_explosive_arrow()
+		"Multishot":
+			_cast_multishot()
+		"Trap Deployment":
+			_cast_trap_deployment()
+		"Rapid Fire":
+			_cast_rapid_fire()
+		# Paladin
 		"Holy Smite":
 			_spawn_holy_smite()
+		"Consecrated Ground":
+			_cast_consecrated_ground()
+		"Divine Strike":
+			_perform_melee_attack_named("Divine Strike")
+		"Lay on Hands":
+			_cast_lay_on_hands()
+		"Holy Avenger":
+			_cast_holy_avenger()
+		# Druid
+		"Thorn Burst":
+			_perform_thorn_burst()
+		"Bear Form":
+			_cast_bear_form()
+		"Wolf Form":
+			_cast_wolf_form()
+		"Vine Prison":
+			_cast_vine_prison()
+		"Nature's Wrath":
+			_cast_natures_wrath()
+		# Necromancer
 		"Bone Spear":
 			_spawn_bone_spear()
+		"Summon Skeletons":
+			_perform_summon_skeletons()
+		"Corpse Explosion":
+			_cast_corpse_explosion()
+		"Life Drain":
+			_cast_life_drain()
+		"Raise Dead":
+			_cast_raise_dead()
+		"Summon Wolves":
+			_perform_summon_wolves()
 		_:
 			_spawn_default_projectile()
 	_consume_double_damage_swing()
@@ -584,6 +727,255 @@ func _perform_summon_skeletons() -> void:
 	if GameManager.current_class:
 		class_id = str(GameManager.current_class.character_class_name)
 	get_tree().call_group("run_arena", "summon_skeletons_for_player", self, class_id, 3, 6, summon_cap_bonus)
+
+
+func _perform_summon_wolves() -> void:
+	get_tree().call_group("run_arena", "summon_wolves_for_player", self, 2, 12.0)
+
+
+func _cast_heavy_hit_with_slow(mult: float, slow_factor: float, slow_time: float) -> void:
+	var nearest := get_nearest_enemy()
+	if nearest == null or global_position.distance_to(nearest.global_position) > _melee_reach() * 1.15:
+		return
+	var dmg: int = _roll_outgoing_damage(_dmg_scaled(equipped_gem.damage * mult))
+	nearest.call("take_damage", dmg)
+	if nearest.has_method("apply_slow"):
+		nearest.call("apply_slow", slow_time, slow_factor)
+
+
+func _cast_heavy_slam() -> void:
+	_play_melee_slash_vfx(Color(0.9, 0.84, 0.7), 16.0, 102.0)
+	_cast_heavy_hit_with_slow(1.55, 0.6, 1.6)
+
+
+func _cast_iron_ward() -> void:
+	_iron_ward_time = 8.0
+	for n in get_tree().get_nodes_in_group("enemies"):
+		if n is Node2D and (n as Node2D).global_position.distance_to(global_position) < 240.0 and n.has_method("apply_slow"):
+			n.call("apply_slow", 1.2, 0.75)
+
+
+func _cast_judgment() -> void:
+	var target := get_nearest_enemy()
+	var pos := target.global_position if target else global_position + _base_aim_dir() * 80.0
+	_spawn_instant_aoe_at(pos, 160.0, _dmg_scaled(equipped_gem.damage * 1.25), "Judgment")
+
+
+func _cast_guardians_wall() -> void:
+	for n in get_tree().get_nodes_in_group("enemies"):
+		if n is Node2D:
+			var d := (n as Node2D).global_position.distance_to(global_position)
+			if d < 200.0 and n.has_method("apply_knockback"):
+				n.call("apply_knockback", global_position, 300.0)
+	_invulnerability_timer = maxf(_invulnerability_timer, 0.8)
+
+
+func _cast_blood_cry() -> void:
+	_blood_cry_time = 8.0
+
+
+func _cast_frenzied_charge() -> void:
+	var dir := _base_aim_dir()
+	global_position += dir * 120.0
+	_shadow_move_time = maxf(_shadow_move_time, 0.8)
+	var nearest := get_nearest_enemy()
+	if nearest and global_position.distance_to(nearest.global_position) < 120.0:
+		nearest.call("take_damage", _roll_outgoing_damage(_dmg_scaled(equipped_gem.damage * 1.3)))
+
+
+func _cast_reckless_swing() -> void:
+	_play_melee_slash_vfx(Color(1.0, 0.35, 0.3), 18.0, 118.0)
+	_cast_heavy_hit_with_slow(1.9, 0.9, 0.4)
+	# self recoil, but intentionally non-lethal
+	health = maxi(1, health - 8)
+	_sync_health_bar()
+
+
+func _cast_berserk_mode() -> void:
+	_berserk_mode_time = 10.0
+
+
+func _cast_lightning_chain() -> void:
+	var first := get_nearest_enemy()
+	if first == null:
+		return
+	var hit_positions: Array[Vector2] = [first.global_position]
+	var current: Node2D = first
+	var total_hits := 4
+	for i in range(total_hits):
+		if current and current.has_method("take_damage"):
+			current.call("take_damage", _roll_outgoing_damage(_dmg_scaled(equipped_gem.damage * 0.92)))
+		var next_target: Node2D = null
+		var best_d2: float = INF
+		for n in get_tree().get_nodes_in_group("enemies"):
+			if not (n is Node2D) or n == current:
+				continue
+			var n2 := n as Node2D
+			var d2 := current.global_position.distance_squared_to(n2.global_position)
+			if d2 < best_d2 and d2 <= 240.0 * 240.0:
+				best_d2 = d2
+				next_target = n2
+		current = next_target
+		if current == null:
+			break
+		hit_positions.append(current.global_position)
+
+
+func _cast_frost_nova() -> void:
+	_spawn_instant_aoe_at(global_position, 170.0, _dmg_scaled(equipped_gem.damage), "Frost Nova", 0.45, 2.2)
+
+
+func _cast_elemental_overload() -> void:
+	var pick := randi() % 3
+	if pick == 0:
+		_spawn_fireball()
+	elif pick == 1:
+		_cast_lightning_chain()
+	else:
+		_cast_frost_nova()
+
+
+func _cast_meteor() -> void:
+	var target := get_nearest_enemy()
+	var pos := target.global_position if target else (global_position + _base_aim_dir() * 180.0)
+	var timer := get_tree().create_timer(0.9)
+	timer.timeout.connect(func():
+		if _is_dead:
+			return
+		_spawn_instant_aoe_at(pos, 210.0, _dmg_scaled(equipped_gem.damage * 1.7), "Meteor", 0.7, 2.0)
+	)
+
+
+func _cast_shadow_teleport_strike() -> void:
+	var t := get_nearest_enemy()
+	if t == null:
+		return
+	var dir := (t.global_position - global_position).normalized()
+	global_position = t.global_position - dir * 18.0
+	_perform_melee_attack_named("Shadow Strike")
+
+
+func _cast_poison_dagger() -> void:
+	var nearest := get_nearest_enemy()
+	if nearest == null:
+		return
+	if global_position.distance_to(nearest.global_position) > _melee_reach():
+		return
+	var dmg := _roll_outgoing_damage(_dmg_scaled(equipped_gem.damage * 1.05))
+	nearest.call("take_damage", dmg)
+	if nearest.has_method("apply_burn"):
+		nearest.call("apply_burn", 3.0, 1.0)
+
+
+func _cast_smoke_bomb() -> void:
+	_smoke_bomb_time = 6.0
+
+
+func _cast_backstab() -> void:
+	var nearest := get_nearest_enemy()
+	if nearest == null:
+		return
+	if global_position.distance_to(nearest.global_position) > _melee_reach() * 1.1:
+		return
+	var dmg := _roll_outgoing_damage(_dmg_scaled(equipped_gem.damage * 2.0))
+	nearest.call("take_damage", dmg)
+
+
+func _cast_death_mark() -> void:
+	_death_mark_time = 6.0
+	var nearest := get_nearest_enemy()
+	if nearest and nearest.has_method("take_damage"):
+		nearest.call("take_damage", _roll_outgoing_damage(_dmg_scaled(equipped_gem.damage * 0.5)))
+
+
+func _cast_explosive_arrow() -> void:
+	var target := get_nearest_enemy()
+	var pos := target.global_position if target else (global_position + _base_aim_dir() * 160.0)
+	_spawn_instant_aoe_at(pos, 130.0, _dmg_scaled(equipped_gem.damage * 1.2), "Explosive Arrow")
+
+
+func _cast_multishot() -> void:
+	var base := _base_aim_dir()
+	var dmg := _dmg_scaled(equipped_gem.damage * 0.65)
+	for i in range(5 + extra_projectiles):
+		var spread := (float(i) - float((5 + extra_projectiles) - 1) * 0.5) * 0.06
+		_spawn_projectile(base.rotated(spread), dmg, 560.0, 3.7, 0.9, _gem_projectile_color("Arrow Volley"))
+
+
+func _cast_trap_deployment() -> void:
+	var pos := global_position + _base_aim_dir() * 120.0
+	_spawn_instant_aoe_at(pos, 130.0, _dmg_scaled(equipped_gem.damage), "Trap Deployment", 0.55, 2.4)
+
+
+func _cast_rapid_fire() -> void:
+	_rapid_fire_time = 4.5
+
+
+func _cast_consecrated_ground() -> void:
+	_spawn_instant_aoe_at(global_position, 180.0, _dmg_scaled(equipped_gem.damage * 0.9), "Consecrated Ground", 0.75, 1.4)
+	heal(maxi(1, int(round(float(max_health) * 0.08))))
+
+
+func _cast_lay_on_hands() -> void:
+	heal(maxi(12, int(round(float(max_health) * 0.22))))
+
+
+func _cast_holy_avenger() -> void:
+	_holy_avenger_time = 9.0
+
+
+func _cast_bear_form() -> void:
+	_bear_form_time = 10.0
+
+
+func _cast_wolf_form() -> void:
+	_wolf_form_time = 9.0
+	_perform_summon_wolves()
+
+
+func _cast_vine_prison() -> void:
+	var target := get_nearest_enemy()
+	var pos := target.global_position if target else global_position + _base_aim_dir() * 110.0
+	_spawn_instant_aoe_at(pos, 150.0, _dmg_scaled(equipped_gem.damage * 1.05), "Vine Prison", 0.4, 2.6)
+
+
+func _cast_natures_wrath() -> void:
+	_cast_lightning_chain()
+	_cast_vine_prison()
+
+
+func _cast_corpse_explosion() -> void:
+	var target := get_nearest_enemy()
+	var pos := target.global_position if target else global_position + _base_aim_dir() * 90.0
+	_spawn_instant_aoe_at(pos, 155.0, _dmg_scaled(equipped_gem.damage * 1.35), "Corpse Explosion")
+
+
+func _cast_life_drain() -> void:
+	var target := get_nearest_enemy()
+	if target == null:
+		return
+	if target.has_method("take_damage"):
+		var dmg := _roll_outgoing_damage(_dmg_scaled(equipped_gem.damage * 0.85))
+		target.call("take_damage", dmg)
+		heal(maxi(1, int(round(float(dmg) * 0.35))))
+
+
+func _cast_raise_dead() -> void:
+	get_tree().call_group("run_arena", "summon_raised_dead_for_player", self, 1, 3)
+
+
+func _spawn_instant_aoe_at(pos: Vector2, radius: float, damage: int, skill_name: String, slow_factor: float = 1.0, slow_duration: float = 0.0) -> void:
+	for n in get_tree().get_nodes_in_group("enemies"):
+		if not (n is Node2D):
+			continue
+		var n2 := n as Node2D
+		if n2.global_position.distance_to(pos) > radius:
+			continue
+		if n2.has_method("take_damage"):
+			n2.call("take_damage", _roll_outgoing_damage(damage))
+		if slow_duration > 0.0 and n2.has_method("apply_slow"):
+			n2.call("apply_slow", slow_duration, slow_factor)
+	get_tree().call_group("run_arena", "record_skill_damage", skill_name, damage)
 
 
 func _consume_double_damage_swing() -> void:
@@ -849,7 +1241,8 @@ func take_damage(amount: int) -> void:
 	if _invulnerability_timer > 0.0:
 		print("Player invulnerable — ignored ", amount, " damage")
 		return
-	if dodge_chance > 0.0 and randf() < dodge_chance:
+	var effective_dodge: float = dodge_chance + (0.25 if _smoke_bomb_time > 0.0 else 0.0)
+	if effective_dodge > 0.0 and randf() < effective_dodge:
 		print("Player dodged an attack!")
 		return
 	var dmg_mult: float = incoming_damage_multiplier
@@ -857,6 +1250,7 @@ func take_damage(amount: int) -> void:
 		var hp_frac := float(health) / float(max_health)
 		if hp_frac <= 0.5:
 			dmg_mult *= (1.0 - class_passive_guardian_low_hp_dr)
+	dmg_mult *= _skill_temp_damage_taken_mult()
 	var amt: int = int(round(float(amount) * dmg_mult))
 	amt = maxi(0, amt)
 	health = maxi(0, health - amt)

@@ -7,6 +7,7 @@ const BOSS_SCENE: PackedScene = preload("res://entities/enemies/boss_enemy.tscn"
 const CHEST_SCENE: PackedScene = preload("res://entities/run_chest.tscn")
 const XP_ORB_SCENE: PackedScene = preload("res://entities/xp_orb.tscn")
 const SKELETON_SCENE: PackedScene = preload("res://entities/minions/skeleton.tscn")
+const WOLF_SCENE: PackedScene = preload("res://entities/minions/wolf.tscn")
 const RUN_HUD_SCENE: PackedScene = preload("res://scenes/ui/run_hud.tscn")
 const END_RUN_SCENE: PackedScene = preload("res://scenes/ui/end_run_screen.tscn")
 const LOOT_POPUP_SCENE: PackedScene = preload("res://scenes/ui/world_loot_popup.tscn")
@@ -36,6 +37,8 @@ var _catchup_cooldown: float = 0.0
 var _heading_streak: float = 0.0
 var _last_heading: Vector2 = Vector2.ZERO
 var _active_skeletons: Array[CharacterBody2D] = []
+var _active_wolves: Array[CharacterBody2D] = []
+var _active_raised_dead: Array[CharacterBody2D] = []
 
 var pause_menu: Node = null
 var level_up_ui: Node = null
@@ -273,6 +276,72 @@ func _prune_dead_skeletons() -> void:
 
 func _on_skeleton_exited(skel: CharacterBody2D) -> void:
 	_active_skeletons.erase(skel)
+
+
+func summon_wolves_for_player(caster: Node2D, summon_count: int = 2, lifetime_seconds: float = 12.0) -> void:
+	if caster == null or WOLF_SCENE == null:
+		return
+	_prune_dead_wolves()
+	for i in range(maxi(0, summon_count)):
+		var w := WOLF_SCENE.instantiate() as CharacterBody2D
+		if w == null:
+			continue
+		w.set("lifetime_seconds", lifetime_seconds)
+		var angle := randf() * TAU
+		var dist := randf_range(24.0, 58.0)
+		w.global_position = caster.global_position + Vector2.from_angle(angle) * dist
+		add_child(w)
+		_active_wolves.append(w)
+		w.tree_exited.connect(_on_wolf_exited.bind(w))
+	print("Summoned ", summon_count, " wolves. Active wolves: ", _active_wolves.size(), " (lasting 12s each)")
+
+
+func _prune_dead_wolves() -> void:
+	var kept: Array[CharacterBody2D] = []
+	for w in _active_wolves:
+		if w != null and is_instance_valid(w):
+			kept.append(w)
+	_active_wolves = kept
+
+
+func _on_wolf_exited(wolf: CharacterBody2D) -> void:
+	_active_wolves.erase(wolf)
+
+
+func summon_raised_dead_for_player(caster: Node2D, summon_count: int = 1, hard_cap: int = 3) -> void:
+	if caster == null or SKELETON_SCENE == null:
+		return
+	_prune_dead_raised_dead()
+	var can_spawn: int = maxi(0, hard_cap - _active_raised_dead.size())
+	var to_spawn: int = mini(maxi(0, summon_count), can_spawn)
+	for i in range(to_spawn):
+		var s := SKELETON_SCENE.instantiate() as CharacterBody2D
+		if s == null:
+			continue
+		s.set("max_health", 80)
+		s.set("health", 80)
+		s.set("contact_damage", 20)
+		s.set("contact_cooldown", 1.2)
+		s.modulate = Color(0.78, 0.86, 1.0, 1.0)
+		var angle := randf() * TAU
+		var dist := randf_range(24.0, 54.0)
+		s.global_position = caster.global_position + Vector2.from_angle(angle) * dist
+		add_child(s)
+		_active_raised_dead.append(s)
+		s.tree_exited.connect(_on_raised_dead_exited.bind(s))
+	print("Raised dead summoned: ", to_spawn, ". Current raised dead: ", _active_raised_dead.size(), "/", hard_cap)
+
+
+func _prune_dead_raised_dead() -> void:
+	var kept: Array[CharacterBody2D] = []
+	for s in _active_raised_dead:
+		if s != null and is_instance_valid(s):
+			kept.append(s)
+	_active_raised_dead = kept
+
+
+func _on_raised_dead_exited(minion: CharacterBody2D) -> void:
+	_active_raised_dead.erase(minion)
 
 
 func _update_boss_schedule() -> void:

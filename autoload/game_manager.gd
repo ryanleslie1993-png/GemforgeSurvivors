@@ -547,27 +547,149 @@ func _skill_name_to_gem(skill_name: String) -> SkillGemResource:
 	gem.gem_name = skill_name
 	gem.gem_type = "projectile"
 	match skill_name:
+		# --- Guardian ---
 		"Holy Shield Bash":
 			gem.damage = 25.0
 			gem.cooldown = 1.2
+		"Shield Bash":
+			gem.damage = 28.0
+			gem.cooldown = 1.1
+			gem.gem_type = "melee"
+		"Heavy Slam":
+			gem.damage = 42.0
+			gem.cooldown = 2.0
+			gem.gem_type = "melee"
+		"Iron Ward":
+			gem.damage = 0.0
+			gem.cooldown = 8.0
+			gem.gem_type = "aura"
+		"Judgment":
+			gem.damage = 30.0
+			gem.cooldown = 4.8
+			gem.gem_type = "aura"
+		"Guardian's Wall":
+			gem.damage = 16.0
+			gem.cooldown = 6.0
+			gem.gem_type = "aura"
+		# --- Berserker ---
 		"Rage Slash":
 			gem.damage = 35.0
 			gem.cooldown = 0.7
+		"Blood Cry":
+			gem.damage = 0.0
+			gem.cooldown = 8.0
+			gem.gem_type = "aura"
+		"Frenzied Charge":
+			gem.damage = 34.0
+			gem.cooldown = 5.0
+			gem.gem_type = "melee"
+		"Reckless Swing":
+			gem.damage = 52.0
+			gem.cooldown = 2.4
+			gem.gem_type = "melee"
+		"Berserk Mode":
+			gem.damage = 0.0
+			gem.cooldown = 14.0
+			gem.gem_type = "aura"
+		# --- Elementalist ---
 		"Fireball":
 			gem.damage = 22.0
 			gem.cooldown = 0.9
+		"Lightning Chain":
+			gem.damage = 18.0
+			gem.cooldown = 1.0
+			gem.gem_type = "projectile"
+		"Frost Nova":
+			gem.damage = 20.0
+			gem.cooldown = 3.4
+			gem.gem_type = "aura"
+		"Elemental Overload":
+			gem.damage = 0.0
+			gem.cooldown = 1.2
+			gem.gem_type = "channel"
+		"Meteor":
+			gem.damage = 90.0
+			gem.cooldown = 7.0
+			gem.gem_type = "projectile"
+		# --- Assassin ---
 		"Shadow Strike":
 			gem.damage = 40.0
 			gem.cooldown = 1.1
+		"Poison Dagger":
+			gem.damage = 24.0
+			gem.cooldown = 0.65
+			gem.gem_type = "melee"
+		"Smoke Bomb":
+			gem.damage = 0.0
+			gem.cooldown = 8.5
+			gem.gem_type = "aura"
+		"Backstab":
+			gem.damage = 58.0
+			gem.cooldown = 1.6
+			gem.gem_type = "melee"
+		"Death Mark":
+			gem.damage = 16.0
+			gem.cooldown = 5.0
+			gem.gem_type = "projectile"
+		# --- Ranger ---
 		"Arrow Volley":
 			gem.damage = 20.0
 			gem.cooldown = 0.65
+		"Explosive Arrow":
+			gem.damage = 26.0
+			gem.cooldown = 1.1
+		"Multishot":
+			gem.damage = 16.0
+			gem.cooldown = 1.0
+		"Trap Deployment":
+			gem.damage = 22.0
+			gem.cooldown = 4.0
+			gem.gem_type = "aura"
+		"Rapid Fire":
+			gem.damage = 12.0
+			gem.cooldown = 6.0
+			gem.gem_type = "channel"
+		# --- Paladin ---
 		"Holy Smite":
 			gem.damage = 28.0
 			gem.cooldown = 1.0
+		"Consecrated Ground":
+			gem.damage = 18.0
+			gem.cooldown = 5.0
+			gem.gem_type = "aura"
+		"Divine Strike":
+			gem.damage = 36.0
+			gem.cooldown = 1.6
+			gem.gem_type = "melee"
+		"Lay on Hands":
+			gem.damage = 0.0
+			gem.cooldown = 8.0
+			gem.gem_type = "aura"
+		"Holy Avenger":
+			gem.damage = 0.0
+			gem.cooldown = 14.0
+			gem.gem_type = "aura"
+		# --- Druid ---
 		"Thorn Burst":
 			gem.damage = 18.0
 			gem.cooldown = 1.4
+		"Bear Form":
+			gem.damage = 0.0
+			gem.cooldown = 12.0
+			gem.gem_type = "transformation"
+		"Wolf Form":
+			gem.damage = 0.0
+			gem.cooldown = 10.0
+			gem.gem_type = "transformation"
+		"Vine Prison":
+			gem.damage = 26.0
+			gem.cooldown = 4.5
+			gem.gem_type = "aura"
+		"Nature's Wrath":
+			gem.damage = 34.0
+			gem.cooldown = 2.0
+			gem.gem_type = "channel"
+		# --- Necromancer ---
 		"Bone Spear":
 			gem.damage = 24.0
 			gem.cooldown = 0.8
@@ -576,6 +698,23 @@ func _skill_name_to_gem(skill_name: String) -> SkillGemResource:
 			gem.gem_type = "summon"
 			gem.damage = 12.0
 			gem.cooldown = 6.0
+		"Corpse Explosion":
+			gem.damage = 40.0
+			gem.cooldown = 3.8
+			gem.gem_type = "aura"
+		"Life Drain":
+			gem.damage = 18.0
+			gem.cooldown = 1.2
+			gem.gem_type = "channel"
+		"Raise Dead":
+			gem.damage = 26.0
+			gem.cooldown = 9.0
+			gem.gem_type = "summon"
+		"Summon Wolves":
+			gem.gem_name = "Summon Wolves"
+			gem.gem_type = "summon"
+			gem.damage = 15.0
+			gem.cooldown = 5.0
 		_:
 			gem.damage = 20.0
 			gem.cooldown = 1.0
