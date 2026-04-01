@@ -6,12 +6,14 @@ const ENEMY_TANK_SCENE: PackedScene = preload("res://entities/enemies/tanky_enem
 const BOSS_SCENE: PackedScene = preload("res://entities/enemies/boss_enemy.tscn")
 const CHEST_SCENE: PackedScene = preload("res://entities/run_chest.tscn")
 const XP_ORB_SCENE: PackedScene = preload("res://entities/xp_orb.tscn")
+const SKELETON_SCENE: PackedScene = preload("res://entities/minions/skeleton.tscn")
 const RUN_HUD_SCENE: PackedScene = preload("res://scenes/ui/run_hud.tscn")
 const END_RUN_SCENE: PackedScene = preload("res://scenes/ui/end_run_screen.tscn")
 const LOOT_POPUP_SCENE: PackedScene = preload("res://scenes/ui/world_loot_popup.tscn")
 const MAX_RUN_SECONDS: float = 1800.0
 ## Full survival (30 min) meta XP bonus, added on top of time/kills formula.
 const META_XP_FULL_RUN_BONUS: int = 250
+const ON_CLASS_DROP_CHANCE: float = 0.85
 
 @export var spawn_radius: float = 760.0
 @export var max_enemies: int = 30
@@ -33,12 +35,16 @@ var _catchup_cooldown: float = 0.0
 ## How long the player has sustained movement in ~same direction (for spawn pressure).
 var _heading_streak: float = 0.0
 var _last_heading: Vector2 = Vector2.ZERO
+var _active_skeletons: Array[CharacterBody2D] = []
 
 var pause_menu: Node = null
 var level_up_ui: Node = null
 var level_up_pending: bool = false
 var run_hud: CanvasLayer = null
 var end_run_screen: CanvasLayer = null
+var gm_menu_layer: CanvasLayer = null
+var gm_menu_panel: PanelContainer = null
+var _gm_menu_open: bool = false
 
 @onready var enemies_node: Node2D = $Enemies
 @onready var _player: CharacterBody2D = $Player
@@ -49,6 +55,7 @@ var end_run_screen: CanvasLayer = null
 func _ready() -> void:
 	add_to_group("run_arena")
 	add_to_group("arena")
+	GameManager.is_in_run = true
 	print("Infinite Run Arena loaded")
 	if _backdrop:
 		print("Backdrop: repeating grass + parallax wash (infinite feel)")
@@ -91,6 +98,73 @@ func _ready() -> void:
 		print("Level up screen created")
 	else:
 		print("WARNING: Level up screen not found")
+	_create_gm_menu()
+
+
+func _create_gm_menu() -> void:
+	gm_menu_layer = CanvasLayer.new()
+	gm_menu_layer.name = "GMMenuLayer"
+	gm_menu_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(gm_menu_layer)
+
+	gm_menu_panel = PanelContainer.new()
+	gm_menu_panel.name = "GMMenuPanel"
+	gm_menu_panel.visible = false
+	gm_menu_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	gm_menu_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	gm_menu_panel.focus_mode = Control.FOCUS_ALL
+	gm_menu_panel.gui_input.connect(_on_gm_panel_gui_input)
+	gm_menu_panel.anchor_left = 0.5
+	gm_menu_panel.anchor_top = 0.5
+	gm_menu_panel.anchor_right = 0.5
+	gm_menu_panel.anchor_bottom = 0.5
+	gm_menu_panel.offset_left = -200.0
+	gm_menu_panel.offset_top = -160.0
+	gm_menu_panel.offset_right = 200.0
+	gm_menu_panel.offset_bottom = 160.0
+	gm_menu_layer.add_child(gm_menu_panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	gm_menu_panel.add_child(margin)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 10)
+	margin.add_child(vb)
+
+	var title := Label.new()
+	title.text = "GM Debug Menu"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 20)
+	vb.add_child(title)
+
+	var xp_btn := Button.new()
+	xp_btn.text = "Give 500 Meta EXP"
+	xp_btn.pressed.connect(_on_gm_give_meta_exp)
+	vb.add_child(xp_btn)
+
+	var points_btn := Button.new()
+	points_btn.text = "Give 5 Meta Skill Points"
+	points_btn.pressed.connect(_on_gm_give_meta_points)
+	vb.add_child(points_btn)
+
+	var mats_btn := Button.new()
+	mats_btn.text = "Give 10 Crafting Materials"
+	mats_btn.pressed.connect(_on_gm_give_materials)
+	vb.add_child(mats_btn)
+
+	var gear_btn := Button.new()
+	gear_btn.text = "Give Random Normal Gear"
+	gear_btn.pressed.connect(_on_gm_give_random_gear)
+	vb.add_child(gear_btn)
+
+	var resume_btn := Button.new()
+	resume_btn.text = "Resume Game"
+	resume_btn.pressed.connect(_on_gm_resume_pressed)
+	vb.add_child(resume_btn)
 
 
 func _process(_delta: float) -> void:
@@ -106,7 +180,7 @@ func _process(_delta: float) -> void:
 	_update_boss_schedule()
 	_update_chest_spawns(_delta)
 	if run_time_s >= MAX_RUN_SECONDS:
-		_end_run("Time limit reached")
+		end_run(true)
 		return
 
 	var streak_mult: float = 1.0 + minf(1.35, _heading_streak / 850.0)
@@ -151,14 +225,54 @@ func _update_run_hud() -> void:
 		run_hud.call("set_timer_text", _format_time(run_time_s))
 	if run_hud and run_hud.has_method("set_kills_line"):
 		run_hud.call("set_kills_line", total_kills, enemy_count, max_enemies)
-	if run_hud and run_hud.has_method("set_run_exp_bar") and _player and is_instance_valid(_player):
-		if "level" in _player and "xp" in _player and "xp_to_next" in _player:
-			run_hud.call("set_run_exp_bar", int(_player.level), int(_player.xp), int(_player.xp_to_next))
+	if run_hud and run_hud.has_method("set_meta_exp_bar"):
+		var class_id: String = _run_class_id()
+		var meta: Dictionary = MetaProgression.get_meta_level_data_for_class(class_id)
+		run_hud.call("set_meta_exp_bar", int(meta.get("level", 1)), int(meta.get("exp", 0)), int(meta.get("next", 1000)))
 	var boss := _get_first_live_boss()
 	if boss and run_hud and run_hud.has_method("set_boss_bar"):
 		run_hud.call("set_boss_bar", str(boss.get("boss_name")), int(boss.get("health")), int(boss.get("max_health")), true)
 	elif run_hud and run_hud.has_method("set_boss_bar"):
 		run_hud.call("set_boss_bar", "", 0, 1, false)
+
+
+func on_player_skill_used(skill_name: String) -> void:
+	if run_hud and run_hud.has_method("show_skill_popup"):
+		run_hud.call("show_skill_popup", skill_name)
+
+
+func summon_skeletons_for_player(caster: Node2D, class_id: String, summon_count: int = 3, base_cap: int = 6, necro_cap_bonus: int = 0) -> void:
+	if caster == null or SKELETON_SCENE == null:
+		return
+	_prune_dead_skeletons()
+	var effective_cap: int = base_cap
+	if class_id == "Necromancer":
+		effective_cap += maxi(0, necro_cap_bonus)
+	var can_spawn: int = maxi(0, effective_cap - _active_skeletons.size())
+	var to_spawn: int = mini(summon_count, can_spawn)
+	for i in range(to_spawn):
+		var s := SKELETON_SCENE.instantiate() as CharacterBody2D
+		if s == null:
+			continue
+		var angle := randf() * TAU
+		var dist := randf_range(28.0, 56.0)
+		s.global_position = caster.global_position + Vector2.from_angle(angle) * dist
+		add_child(s)
+		_active_skeletons.append(s)
+		s.tree_exited.connect(_on_skeleton_exited.bind(s))
+	print("Summoned ", to_spawn, " skeletons. Current count: ", _active_skeletons.size(), "/", effective_cap)
+
+
+func _prune_dead_skeletons() -> void:
+	var kept: Array[CharacterBody2D] = []
+	for s in _active_skeletons:
+		if s != null and is_instance_valid(s):
+			kept.append(s)
+	_active_skeletons = kept
+
+
+func _on_skeleton_exited(skel: CharacterBody2D) -> void:
+	_active_skeletons.erase(skel)
 
 
 func _update_boss_schedule() -> void:
@@ -330,7 +444,7 @@ func _deferred_spawn_xp_orb(at: Vector2) -> void:
 	add_child(orb)
 
 
-func on_boss_died(boss_title: String, at: Vector2) -> void:
+func on_boss_died(boss_title: String, at: Vector2, _source: String = "boss") -> void:
 	enemy_count = maxi(0, enemy_count - 1)
 	total_kills += 1
 	print("Boss defeated: ", boss_title)
@@ -341,9 +455,12 @@ func _deferred_drop_boss_rewards(at: Vector2) -> void:
 	_drop_boss_rewards(at)
 
 
-func open_chest(at: Vector2) -> void:
+func open_chest(at: Vector2, _source: String = "chest") -> void:
 	print("Chest opened at ", at, " (normal quality gear roll)")
 	var popup_lines: PackedStringArray = []
+	var dropped_item: Dictionary = _drop_weighted_gear_to_inventory("chest")
+	if not dropped_item.is_empty():
+		popup_lines.append("Gained %s" % str(dropped_item.get("item_name", "Gear")))
 	var mats: int = 1 + randi() % 3
 	_drop_common_materials(at, mats)
 	popup_lines.append("Gained %d Crafting Materials" % mats)
@@ -368,6 +485,7 @@ func open_chest(at: Vector2) -> void:
 
 func _drop_boss_rewards(at: Vector2) -> void:
 	print("Boss loot drop: higher quality gear + materials + gem chance")
+	_drop_weighted_gear_to_inventory("boss")
 	_drop_common_materials(at, 6 + randi() % 4)
 	for i in range(8):
 		var orb: Node2D = XP_ORB_SCENE.instantiate() as Node2D
@@ -396,6 +514,32 @@ func _drop_exp_magnet() -> void:
 	for n in get_tree().get_nodes_in_group("xp_orb"):
 		if n is Node2D and (n as Node2D).global_position.distance_to(_player.global_position) < 1200.0:
 			(n as Node2D).global_position = _player.global_position + Vector2(randf_range(-16.0, 16.0), randf_range(-16.0, 16.0))
+
+
+func _drop_weighted_gear_to_inventory(drop_source: String) -> Dictionary:
+	var class_key: String = _run_class_id()
+	if class_key == "":
+		print("Dropped gear skipped: missing current class")
+		return {}
+	var class_archetype: String = GameManager.get_archetype_for_class(class_key)
+	var chosen_archetype: String = class_archetype
+	if randf() > ON_CLASS_DROP_CHANCE:
+		var off_classes := [GameManager.ARCHETYPE_HEAVY, GameManager.ARCHETYPE_LIGHT, GameManager.ARCHETYPE_ARCANE]
+		off_classes.erase(class_archetype)
+		chosen_archetype = str(off_classes[randi() % off_classes.size()])
+	var item: Dictionary = GameManager.gamble_gear_for_class(class_key, "", chosen_archetype)
+	print(
+		"Dropped gear: ",
+		str(item.get("item_name", "Unknown Gear")),
+		" [",
+		chosen_archetype,
+		"] for player class: ",
+		class_key,
+		" (source=",
+		drop_source,
+		")"
+	)
+	return item
 
 
 func _roll_random_unlocked_skill_gem() -> String:
@@ -429,9 +573,7 @@ func _format_time(seconds_total: float) -> String:
 
 
 func _run_class_id() -> String:
-	if GameManager.current_class and GameManager.current_class.character_class_name != "":
-		return str(GameManager.current_class.character_class_name)
-	return ""
+	return GameManager.get_current_class_key()
 
 
 func _compute_meta_xp_for_run() -> int:
@@ -450,17 +592,21 @@ func _get_first_live_boss() -> CharacterBody2D:
 	return null
 
 
-func _end_run(reason: String) -> void:
+func end_run(success: bool) -> void:
+	var reason: String = "Time limit reached" if success else "Player died"
 	if _run_ended:
 		return
 	_run_ended = true
+	var ended_via_pause_menu: bool = (pause_menu != null and pause_menu.visible and not success)
+	GameManager.is_in_run = false
+	_gm_menu_open = false
+	if gm_menu_panel:
+		gm_menu_panel.visible = false
 	get_tree().paused = true
 	var run_class: String = _run_class_id()
 	var meta_gain: int = _compute_meta_xp_for_run()
-	if run_class != "":
-		MetaProgression.add_meta_xp(meta_gain, run_class)
-	else:
-		push_warning("Run ended with no class in GameManager — meta XP not awarded (would have been %d)" % meta_gain)
+	MetaProgression.add_meta_xp(meta_gain, run_class)
+	print("Meta EXP gained on run end: ", meta_gain, " for class ", run_class)
 	var meta: Dictionary = {"level": 1, "exp": 0, "next": 120}
 	if run_class != "":
 		meta = MetaProgression.get_meta_level_data_for_class(run_class)
@@ -471,7 +617,10 @@ func _end_run(reason: String) -> void:
 	for k in _damage_by_skill.keys():
 		rows.append({"skill": str(k), "damage": int(_damage_by_skill[k])})
 	rows.sort_custom(func(a: Dictionary, b: Dictionary): return int(a["damage"]) > int(b["damage"]))
-	var end_title := "Defeated" if reason == "Player died" else "Run Complete"
+	var end_title := "Defeated" if not success else "Run Complete"
+	print("Run ended. Time: ", _format_time(run_time_s), " Kills: ", total_kills, " Meta EXP awarded: ", meta_gain)
+	if ended_via_pause_menu:
+		print("Run ended via pause menu. Meta EXP awarded: ", meta_gain)
 	print("Run ended: ", reason, " | time=", _format_time(run_time_s), " kills=", total_kills, " meta_gain=", meta_gain, " class=", run_class)
 	if end_run_screen and end_run_screen.has_method("show_results"):
 		end_run_screen.call(
@@ -487,6 +636,11 @@ func _end_run(reason: String) -> void:
 			meta_gain,
 			end_title
 		)
+
+
+func _end_run(reason: String) -> void:
+	# Backward-compatible wrapper for older call sites.
+	end_run(reason != "Player died")
 
 
 func request_open_level_up_if_needed(player: Node) -> void:
@@ -548,8 +702,69 @@ func toggle_pause() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_G:
+		_toggle_gm_menu()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		toggle_pause()
+
+
+func _toggle_gm_menu() -> void:
+	if gm_menu_panel == null:
+		return
+	_gm_menu_open = not _gm_menu_open
+	gm_menu_panel.visible = _gm_menu_open
+	if _gm_menu_open:
+		get_tree().paused = true
+		gm_menu_panel.grab_focus()
+		print("GM menu opened")
+	else:
+		if level_up_pending:
+			get_tree().paused = true
+		elif pause_menu and pause_menu.visible:
+			get_tree().paused = true
+		else:
+			get_tree().paused = false
+		print("GM menu closed")
+
+
+func _on_gm_give_meta_exp() -> void:
+	var class_key := _run_class_id()
+	MetaProgression.add_meta_xp(500, class_key)
+	print("GM: gave 500 Meta EXP to class ", class_key)
+
+
+func _on_gm_give_meta_points() -> void:
+	var class_key := _run_class_id()
+	MetaProgression.add_points(class_key, 5)
+	print("GM: gave 5 Meta Skill Points to class ", class_key)
+
+
+func _on_gm_give_materials() -> void:
+	if _player == null:
+		return
+	_drop_common_materials(_player.global_position, 10)
+	print("GM: gave 10 Crafting Materials")
+
+
+func _on_gm_give_random_gear() -> void:
+	var class_key := _run_class_id()
+	var archetype := GameManager.get_archetype_for_class(class_key)
+	var item: Dictionary = GameManager.gamble_gear_for_class(class_key, "", archetype)
+	print("GM: gave random normal gear -> ", item.get("item_name", "?"), " [", archetype, "] for class ", class_key)
+
+
+func _on_gm_resume_pressed() -> void:
+	if _gm_menu_open:
+		_toggle_gm_menu()
+
+
+func _on_gm_panel_gui_input(event: InputEvent) -> void:
+	if not _gm_menu_open:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_G:
+		_toggle_gm_menu()
 
 
 func on_pause_resume_pressed() -> void:
@@ -567,7 +782,7 @@ func on_player_died() -> void:
 		level_up_ui.hide_level_up()
 	if pause_menu:
 		pause_menu.visible = false
-	_end_run("Player died")
+	end_run(false)
 
 
 func _read_pending(player: Node) -> int:
@@ -578,14 +793,17 @@ func _read_pending(player: Node) -> int:
 
 func _on_end_run_replay_pressed() -> void:
 	get_tree().paused = false
+	GameManager.mark_next_run_as_new()
 	get_tree().change_scene_to_file("res://scenes/run_arena/run_arena.tscn")
 
 
 func _on_end_run_equipment_pressed() -> void:
 	get_tree().paused = false
+	GameManager.is_in_run = false
 	get_tree().change_scene_to_file("res://scenes/ui/inventory_screen.tscn")
 
 
 func _on_end_run_menu_pressed() -> void:
 	get_tree().paused = false
+	GameManager.is_in_run = false
 	get_tree().change_scene_to_file("res://main.tscn")

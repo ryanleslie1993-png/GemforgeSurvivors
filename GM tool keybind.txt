@@ -1,0 +1,2 @@
+G for GM mode in game
+F12 for text document of info in game

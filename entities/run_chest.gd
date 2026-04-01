@@ -34,5 +34,5 @@ func _on_body_entered(body: Node2D) -> void:
 func _deferred_open_and_free(pos: Vector2) -> void:
 	for n in get_tree().get_nodes_in_group("run_arena"):
 		if n.has_method("open_chest"):
-			n.call("open_chest", pos)
+			n.call("open_chest", pos, "chest")
 	queue_free()

@@ -227,6 +227,7 @@ func _on_play_pressed() -> void:
 	var class_data := ClassData.new()
 	class_data.character_class_name = selected_class
 	GameManager.current_class = class_data
+	GameManager.mark_next_run_as_new()
 	get_tree().change_scene_to_file("res://scenes/run_arena/run_arena.tscn")
 
 

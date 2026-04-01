@@ -48,29 +48,52 @@ show_percentage = false
 anchors_preset = 12
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = -72.0
-offset_right = -16.0
-offset_bottom = -10.0
+offset_left = 8.0
+offset_top = -34.0
+offset_right = -8.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
 
-[node name="ExpVBox" type="VBoxContainer" parent="BottomExpBar"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="ExpLabel" type="Label" parent="BottomExpBar/ExpVBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 15
-theme_override_colors/font_color = Color(0.9, 0.94, 1, 1)
-text = "Lv 1 — Run EXP: 0 / 50"
-horizontal_alignment = 1
-
-[node name="ExpProgress" type="ProgressBar" parent="BottomExpBar/ExpVBox"]
-custom_minimum_size = Vector2(0, 22)
+[node name="ExpProgress" type="ProgressBar" parent="BottomExpBar"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 show_percentage = false
+
+[node name="ExpText" type="Label" parent="BottomExpBar/ExpProgress"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.93, 0.96, 1, 1)
+text = "Level 1  |  EXP: 0 / 1000"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SkillPopupAnchor" type="Control" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -360.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 180.0
+grow_horizontal = 0
+
+[node name="SkillPopupVBox" type="VBoxContainer" parent="SkillPopupAnchor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 2
+theme_override_constants/separation = 6

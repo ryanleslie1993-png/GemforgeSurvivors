@@ -10,12 +10,34 @@ signal meta_xp_gained(amount: int)
 var current_class: ClassData
 var is_in_run: bool = false
 var run_time: float = 0.0
+var _next_run_is_new: bool = false
 
 const EQUIP_SAVE_PATH := "user://equipment_state.json"
 const SLOT_TYPES := ["weapon", "armor", "boots", "accessory"]
 const ARCHETYPE_HEAVY := "Heavy"
 const ARCHETYPE_LIGHT := "Light"
 const ARCHETYPE_ARCANE := "Arcane"
+const LEVEL_UP_BUFF_CATALOG = preload("res://scripts/level_up/level_up_buff_catalog.gd")
+const CLASS_PASSIVE_BLURBS: Dictionary = {
+	"Paladin": "Radiance - 5% of all healing becomes AoE holy damage (scales with meta holy damage).",
+	"Guardian": "Bulwark - below 50% HP, take 12% less damage from hits.",
+	"Berserker": "Blood Fury - below 50% HP, deal 15% more damage.",
+	"Elementalist": "Wildfire - burn damage over time is 12% stronger.",
+	"Assassin": "Predator's Eye - +10% critical strike chance.",
+	"Ranger": "Strider - +12% movement speed.",
+	"Druid": "Verdant Heart - +0.35% max HP regeneration per second.",
+	"Necromancer": "Grave Momentum - +10% projectile speed.",
+}
+const ALL_STARTING_SKILLS: PackedStringArray = [
+	"Holy Shield Bash",
+	"Rage Slash",
+	"Fireball",
+	"Shadow Strike",
+	"Arrow Volley",
+	"Holy Smite",
+	"Thorn Burst",
+	"Bone Spear",
+]
 
 # Per-class equipment state.
 var equipped_by_class: Dictionary = {} # class_id -> {slot_type: item_dict}
@@ -25,8 +47,16 @@ var loose_skill_gems_by_class: Dictionary = {} # class_id -> Array[String]
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process_unhandled_input(true)
 	_load_equipment_state()
 	print("GameManager autoload ready")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F12:
+		generate_full_design_status_report()
+		get_viewport().set_input_as_handled()
 
 
 func _class_key_or_default(class_key: String) -> String:
@@ -50,6 +80,116 @@ func get_archetype_for_class(class_key: String) -> String:
 			return ARCHETYPE_ARCANE
 		_:
 			return ARCHETYPE_HEAVY
+
+
+func _starting_skill_for_class(class_key: String) -> String:
+	var key := _class_key_or_default(class_key)
+	match key:
+		"Guardian":
+			return "Holy Shield Bash"
+		"Berserker":
+			return "Rage Slash"
+		"Elementalist":
+			return "Fireball"
+		"Assassin":
+			return "Shadow Strike"
+		"Ranger":
+			return "Arrow Volley"
+		"Paladin":
+			return "Holy Smite"
+		"Druid":
+			return "Thorn Burst"
+		"Necromancer":
+			return "Bone Spear"
+		_:
+			return "Basic Attack"
+
+
+func _starting_weapon_name_for_class(class_key: String) -> String:
+	var key := _class_key_or_default(class_key)
+	match key:
+		"Guardian":
+			return "Guardian's Hammer"
+		"Berserker":
+			return "Iron Greatsword"
+		"Paladin":
+			return "Blessed Warhammer"
+		"Assassin":
+			return "Sharp Dagger"
+		"Ranger":
+			return "Hunter's Bow"
+		"Elementalist":
+			return "Old Wand"
+		"Druid":
+			return "Druidic Staff"
+		"Necromancer":
+			return "Necromancer's Scepter"
+		_:
+			return "Rusty Blade"
+
+
+func _starting_weapon_stats_for_archetype(archetype: String) -> Dictionary:
+	match archetype:
+		ARCHETYPE_HEAVY:
+			return {"damage_flat": 14, "armor_flat": 2}
+		ARCHETYPE_LIGHT:
+			return {"attack_speed_pct": 0.08, "move_speed_flat": 4}
+		ARCHETYPE_ARCANE:
+			return {"skill_damage_pct": 0.10, "cdr_pct": 0.05}
+		_:
+			return {"damage_flat": 10}
+
+
+func mark_next_run_as_new() -> void:
+	_next_run_is_new = true
+
+
+func consume_next_run_is_new() -> bool:
+	var value: bool = _next_run_is_new
+	_next_run_is_new = false
+	return value
+
+
+func give_starting_weapon_if_needed(class_key: String, is_new_run: bool) -> void:
+	var key := _class_key_or_default(class_key)
+	if not is_new_run:
+		print("Starter weapon check skipped: is_new_run=false for class ", key)
+		return
+	_ensure_class_state(key)
+	var equip: Dictionary = equipped_by_class[key]
+	var existing_weapon: Dictionary = equip.get("weapon", {})
+	if not existing_weapon.is_empty():
+		print("Starter weapon not granted: weapon already equipped for class ", key, " -> ", existing_weapon.get("item_name", "(unknown)"))
+		return
+
+	var archetype: String = get_archetype_for_class(key)
+	var rarity := "normal"
+	var starting_skill: String = _starting_skill_for_class(key)
+	var starting_weapon_name: String = _starting_weapon_name_for_class(key)
+	var starter_weapon: Dictionary = {
+		"item_name": starting_weapon_name,
+		"slot_type": "weapon",
+		"gear_type": "Weapon",
+		"rarity": rarity,
+		"archetype": archetype,
+		"core_bonus": _core_bonus_for_item("weapon", archetype, rarity),
+		"stats": _starting_weapon_stats_for_archetype(archetype),
+		"socket_count": 1,
+		"socketed_skill": starting_skill,
+	}
+	equip["weapon"] = starter_weapon
+	equipped_by_class[key] = equip
+	save_equipment_state()
+	print(
+		"Gave starter weapon to ",
+		key,
+		": ",
+		starting_weapon_name,
+		" [Weapon / ",
+		archetype,
+		"] | socketed gem: ",
+		starting_skill
+	)
 
 
 func get_armor_type_for_class(class_key: String) -> String:
@@ -234,14 +374,16 @@ func _random_secondary_stats_for_slot(slot_type: String, archetype: String, rari
 			return {}
 
 
-func gamble_gear_for_class(class_key: String, forced_slot: String = "") -> Dictionary:
+func gamble_gear_for_class(class_key: String, forced_slot: String = "", forced_archetype: String = "") -> Dictionary:
 	var key := _class_key_or_default(class_key)
 	_ensure_class_state(key)
 	var slot_type := forced_slot.to_lower()
 	if slot_type == "" or slot_type not in SLOT_TYPES:
 		slot_type = String(SLOT_TYPES[randi() % SLOT_TYPES.size()])
 	var rarity := "normal"
-	var archetype: String = get_archetype_for_class(key)
+	var archetype: String = forced_archetype
+	if archetype == "":
+		archetype = get_archetype_for_class(key)
 	var item := {
 		"item_name": _random_item_name_for_slot(slot_type, archetype),
 		"slot_type": slot_type,
@@ -281,6 +423,26 @@ func equip_inventory_item(class_key: String, inventory_index: int) -> bool:
 	inventory_by_class[key] = inv
 	save_equipment_state()
 	print("Equipped item: ", item.get("item_name", "(unknown)"), " to ", slot_type, " for class ", key)
+	return true
+
+
+func unequip_slot_to_inventory(class_key: String, slot_type: String) -> bool:
+	var key := _class_key_or_default(class_key)
+	var slot := slot_type.to_lower()
+	_ensure_class_state(key)
+	if slot not in SLOT_TYPES:
+		return false
+	var equip: Dictionary = equipped_by_class[key]
+	var item: Dictionary = equip.get(slot, {})
+	if item.is_empty():
+		return false
+	var inv: Array = inventory_by_class[key]
+	inv.append(item.duplicate(true))
+	equip[slot] = {}
+	equipped_by_class[key] = equip
+	inventory_by_class[key] = inv
+	save_equipment_state()
+	print("Unequipped item: ", item.get("item_name", "(unknown)"), " from ", slot, " for class ", key)
 	return true
 
 
@@ -409,6 +571,11 @@ func _skill_name_to_gem(skill_name: String) -> SkillGemResource:
 		"Bone Spear":
 			gem.damage = 24.0
 			gem.cooldown = 0.8
+		"Summon Skeletons", "Skeleton Army":
+			gem.gem_name = "Summon Skeletons"
+			gem.gem_type = "summon"
+			gem.damage = 12.0
+			gem.cooldown = 6.0
 		_:
 			gem.damage = 20.0
 			gem.cooldown = 1.0
@@ -427,6 +594,218 @@ func get_equipped_skill_gem_for_class(class_key: String) -> SkillGemResource:
 		if skill_name != "":
 			return _skill_name_to_gem(skill_name)
 	return null
+
+
+func generate_full_design_status_report() -> void:
+	# Ensure static catalogs are built before reading raw rows.
+	LEVEL_UP_BUFF_CATALOG.roll_choices(1)
+	MetaProgression.Catalog.ensure_built()
+
+	var lines: PackedStringArray = []
+	lines.append("Gemforge Survivors - Full Design Status")
+	lines.append("Generated: %s" % Time.get_datetime_string_from_system())
+	lines.append("")
+
+	_append_characters_overview(lines)
+	_append_skills_overview(lines)
+	_append_level_up_catalog(lines)
+	_append_gear_system(lines)
+	_append_current_run_modifiers(lines)
+
+	var desktop_dir: String = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
+	var path: String = desktop_dir.path_join("GemforgeSurvivors_Full_Design_Status.txt")
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		push_warning("Failed to write full design status report to Desktop.")
+		return
+	f.store_string("\n".join(lines))
+	f.close()
+	print("Full design status report generated on Desktop")
+	_show_status_toast("Full design status report generated on Desktop")
+
+
+func _append_characters_overview(lines: PackedStringArray) -> void:
+	lines.append("=== 1) All Characters Overview ===")
+	var class_ids: PackedStringArray = MetaProgression.Catalog.get_all_class_ids()
+	for class_id in class_ids:
+		var meta: Dictionary = MetaProgression.get_meta_level_data_for_class(class_id)
+		var points: int = MetaProgression.get_points(class_id)
+		var archetype: String = get_archetype_for_class(class_id)
+		var start_weapon: String = _starting_weapon_name_for_class(class_id)
+		var start_skill: String = _starting_skill_for_class(class_id)
+		lines.append("- %s" % class_id)
+		lines.append("  Base Stats: HP 120, Move Speed 450.0")
+		lines.append("  Unique Passive: %s" % str(CLASS_PASSIVE_BLURBS.get(class_id, "N/A")))
+		lines.append("  Starting Weapon + Skill: %s + %s" % [start_weapon, start_skill])
+		lines.append("  Archetype: %s" % archetype)
+		lines.append("  Meta: Level %d, EXP %d/%d, Skill Points %d" % [
+			int(meta.get("level", 1)),
+			int(meta.get("exp", 0)),
+			int(meta.get("next", 1000)),
+			points
+		])
+		var unlocked: Array = MetaProgression.get_unlocked_list(class_id)
+		var tree: Dictionary = MetaProgression.Catalog.get_tree(class_id)
+		var by_id: Dictionary = {}
+		for row in tree.get("nodes", []):
+			by_id[str(row.get("id", ""))] = row
+		var major: PackedStringArray = []
+		var minor: PackedStringArray = []
+		for nid in unlocked:
+			var nrow: Dictionary = by_id.get(str(nid), {})
+			if nrow.is_empty():
+				continue
+			var title: String = str(nrow.get("title", nid))
+			var kind: String = str(nrow.get("kind", ""))
+			if kind == MetaProgression.Catalog.KIND_CENTER or kind == MetaProgression.Catalog.KIND_CORNER:
+				major.append(title)
+			else:
+				minor.append(title)
+		lines.append("  Unlocked Major Nodes: %s" % (", ".join(major) if major.size() > 0 else "none"))
+		lines.append("  Unlocked Minor Nodes: %s" % (", ".join(minor) if minor.size() > 0 else "none"))
+		lines.append("")
+
+
+func _append_skills_overview(lines: PackedStringArray) -> void:
+	lines.append("=== 2) All Skills / Skill Gems ===")
+	var player: Node = _get_player_if_running()
+	var global_dmg_mult: float = 1.0
+	var global_cdr_mult: float = 1.0
+	var global_proj_add: int = 0
+	if player:
+		global_dmg_mult = _safe_f(player, "stat_damage_mult", 1.0)
+		global_cdr_mult = _safe_f(player, "meta_skill_cdr_mult", 1.0)
+		global_proj_add = _safe_i(player, "extra_projectiles", 0)
+	lines.append("Global Modifiers: damage x%s, cooldown x%s, +%d projectiles" % [
+		str(snappedf(global_dmg_mult, 0.01)),
+		str(snappedf(global_cdr_mult, 0.01)),
+		global_proj_add
+	])
+	for skill_name in ALL_STARTING_SKILLS:
+		var gem: SkillGemResource = _skill_name_to_gem(skill_name)
+		var dmg: float = gem.damage * global_dmg_mult
+		var cd: float = gem.cooldown * global_cdr_mult
+		lines.append("- %s" % skill_name)
+		lines.append("  Base: damage=%s, cooldown=%ss, type=%s" % [str(snappedf(gem.damage, 0.01)), str(snappedf(gem.cooldown, 0.01)), gem.gem_type])
+		lines.append("  Current Effective (global): damage=%s, cooldown=%ss, projectiles/hits=%d" % [
+			str(snappedf(dmg, 0.01)),
+			str(snappedf(cd, 0.01)),
+			1 + global_proj_add
+		])
+	lines.append("")
+
+
+func _append_level_up_catalog(lines: PackedStringArray) -> void:
+	lines.append("=== 3) Level Up Rewards Catalog ===")
+	var rows: Array = LEVEL_UP_BUFF_CATALOG.BUFF_ROWS
+	for row in rows:
+		var bid: String = str(row.get("id", ""))
+		var rarity: String = str(row.get("rarity", "common")).capitalize()
+		var title: String = str(row.get("title", "Unknown"))
+		var desc: String = str(row.get("description", ""))
+		var mode := "Compounding multiplier"
+		if bid.contains("_proj_") or bid.contains("_hp_") or bid.contains("_lifesteal_") or bid.contains("_summon_") or bid.contains("_pierce_"):
+			mode = "Additive flat value"
+		elif bid.contains("_double_") or bid.contains("_invuln_"):
+			mode = "Temporary/special effect"
+		lines.append("- [%s] %s (%s)" % [rarity, title, bid])
+		lines.append("  Description: %s" % desc)
+		lines.append("  Application: %s" % mode)
+	lines.append("")
+
+
+func _append_gear_system(lines: PackedStringArray) -> void:
+	lines.append("=== 4) Gear System ===")
+	lines.append("Archetypes and core bonuses (Normal quality):")
+	lines.append("- Heavy Weapon: %s" % _fmt_dict(_core_bonus_for_item("weapon", ARCHETYPE_HEAVY, "normal")))
+	lines.append("- Light Weapon: %s" % _fmt_dict(_core_bonus_for_item("weapon", ARCHETYPE_LIGHT, "normal")))
+	lines.append("- Arcane Weapon: %s" % _fmt_dict(_core_bonus_for_item("weapon", ARCHETYPE_ARCANE, "normal")))
+	lines.append("- Heavy Armor: %s" % _fmt_dict(_core_bonus_for_item("armor", ARCHETYPE_HEAVY, "normal")))
+	lines.append("- Light Armor: %s" % _fmt_dict(_core_bonus_for_item("armor", ARCHETYPE_LIGHT, "normal")))
+	lines.append("- Arcane Armor: %s" % _fmt_dict(_core_bonus_for_item("armor", ARCHETYPE_ARCANE, "normal")))
+	lines.append("Drop Weighting Rules:")
+	lines.append("- Chest/Boss: 85% on-class archetype, 15% off-class random archetype")
+	lines.append("- All dropped gear in current implementation: Normal quality, 1 empty socket")
+	lines.append("Example Normal Gear:")
+	lines.append("- Heavy: Guardian's Hammer [Weapon / Heavy], socket_count=1")
+	lines.append("- Light: Hunter's Bow [Weapon / Light], socket_count=1")
+	lines.append("- Arcane: Old Wand [Weapon / Arcane], socket_count=1")
+	lines.append("")
+
+
+func _append_current_run_modifiers(lines: PackedStringArray) -> void:
+	lines.append("=== 5) Current Run Modifiers ===")
+	if not is_in_run:
+		lines.append("No active run.")
+		lines.append("")
+		return
+	var player: Node = _get_player_if_running()
+	if player == null:
+		lines.append("Run active but player data unavailable.")
+		lines.append("")
+		return
+	lines.append("- XP Gain Mult: x%s" % str(_safe_f(player, "xp_gain_mult", 1.0)))
+	lines.append("- Damage Mult: x%s" % str(_safe_f(player, "stat_damage_mult", 1.0)))
+	lines.append("- Attack Speed Mult: x%s" % str(_safe_f(player, "stat_attack_speed_mult", 1.0)))
+	lines.append("- Cooldown Mult: x%s" % str(_safe_f(player, "meta_skill_cdr_mult", 1.0)))
+	lines.append("- Area Mult: x%s" % str(_safe_f(player, "stat_area_mult", 1.0)))
+	lines.append("- Pickup Radius Mult: x%s" % str(_safe_f(player, "pickup_radius_mult", 1.0)))
+	lines.append("- Extra Projectiles: %d" % _safe_i(player, "extra_projectiles", 0))
+	lines.append("")
+
+
+func _get_player_if_running() -> Node:
+	return get_tree().get_first_node_in_group("player")
+
+
+func _safe_f(node: Node, prop: String, fallback: float) -> float:
+	if node != null and (prop in node):
+		return float(node.get(prop))
+	return fallback
+
+
+func _safe_i(node: Node, prop: String, fallback: int) -> int:
+	if node != null and (prop in node):
+		return int(node.get(prop))
+	return fallback
+
+
+func _fmt_dict(v: Variant) -> String:
+	if typeof(v) != TYPE_DICTIONARY:
+		return str(v)
+	var d: Dictionary = v
+	if d.is_empty():
+		return "-"
+	var parts: PackedStringArray = []
+	var keys := d.keys()
+	keys.sort()
+	for k in keys:
+		parts.append("%s=%s" % [str(k), str(d[k])])
+	return ", ".join(parts)
+
+
+func _show_status_toast(message: String) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 300
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().root.add_child(layer)
+	var label := Label.new()
+	label.text = message
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.anchors_preset = 10
+	label.anchor_left = 0.5
+	label.anchor_right = 0.5
+	label.offset_left = -320
+	label.offset_right = 320
+	label.offset_top = 20
+	label.offset_bottom = 56
+	label.modulate = Color(1, 1, 1, 0.95)
+	layer.add_child(label)
+	var t := layer.create_tween()
+	t.tween_interval(1.2)
+	t.tween_property(label, "modulate:a", 0.0, 0.45)
+	t.finished.connect(layer.queue_free)
 
 
 func save_equipment_state() -> void:

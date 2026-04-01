@@ -19,8 +19,28 @@ func set_boss_bar(boss_title: String, hp: int, hp_max: int, visible_bar: bool) -
 	$TopCenter/BossBar.value = float(maxi(0, hp))
 
 
-func set_run_exp_bar(level: int, xp: int, xp_need: int) -> void:
+func set_meta_exp_bar(level: int, xp: int, xp_need: int) -> void:
 	var need: int = maxi(1, xp_need)
-	$BottomExpBar/ExpVBox/ExpLabel.text = "Lv %d — Run EXP: %d / %d" % [level, xp, need]
-	$BottomExpBar/ExpVBox/ExpProgress.max_value = float(need)
-	$BottomExpBar/ExpVBox/ExpProgress.value = float(clampi(xp, 0, need))
+	$BottomExpBar/ExpProgress.max_value = float(need)
+	$BottomExpBar/ExpProgress.value = float(clampi(xp, 0, need))
+	$BottomExpBar/ExpProgress/ExpText.text = "Level %d  |  EXP: %d / %d" % [level, xp, need]
+
+
+func set_run_exp_bar(level: int, xp: int, xp_need: int) -> void:
+	# Backward-compatible alias for older callers.
+	set_meta_exp_bar(level, xp, xp_need)
+
+
+func show_skill_popup(skill_name: String) -> void:
+	if skill_name == "":
+		return
+	var label := Label.new()
+	label.text = skill_name
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label.modulate = Color(0.92, 0.96, 1.0, 0.88)
+	label.add_theme_font_size_override("font_size", 20)
+	$SkillPopupAnchor/SkillPopupVBox.add_child(label)
+	$SkillPopupAnchor/SkillPopupVBox.move_child(label, 0)
+	var tween := create_tween()
+	tween.tween_property(label, "modulate:a", 0.0, 1.8)
+	tween.finished.connect(label.queue_free)

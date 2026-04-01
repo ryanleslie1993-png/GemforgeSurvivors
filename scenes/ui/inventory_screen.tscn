@@ -232,6 +232,53 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
+[node name="InspectorMargin" type="MarginContainer" parent="MainMargin/RootVBox/TopArea/TopRightSpacer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="InspectorVBox" type="VBoxContainer" parent="MainMargin/RootVBox/TopArea/TopRightSpacer/InspectorMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="InspectorTitle" type="Label" parent="MainMargin/RootVBox/TopArea/TopRightSpacer/InspectorMargin/InspectorVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Item Details"
+
+[node name="InspectorDetails" type="RichTextLabel" parent="MainMargin/RootVBox/TopArea/TopRightSpacer/InspectorMargin/InspectorVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+text = "Select an item from inventory to inspect."
+
+[node name="InspectorButtons" type="HBoxContainer" parent="MainMargin/RootVBox/TopArea/TopRightSpacer/InspectorMargin/InspectorVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EquipButton" type="Button" parent="MainMargin/RootVBox/TopArea/TopRightSpacer/InspectorMargin/InspectorVBox/InspectorButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Equip"
+
+[node name="UnequipButton" type="Button" parent="MainMargin/RootVBox/TopArea/TopRightSpacer/InspectorMargin/InspectorVBox/InspectorButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Unequip"
+
+[node name="SocketGemButton" type="Button" parent="MainMargin/RootVBox/TopArea/TopRightSpacer/InspectorMargin/InspectorVBox/InspectorButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Socket Gem"
+
 [node name="InventorySection" type="PanelContainer" parent="MainMargin/RootVBox"]
 layout_mode = 2
 size_flags_horizontal = 3

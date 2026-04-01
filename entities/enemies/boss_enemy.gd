@@ -28,13 +28,16 @@ func _physics_process(delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null:
 		return
+	var target := _pick_chase_target(player)
+	if target == null:
+		return
 	_contact_cd = maxf(0.0, _contact_cd - delta)
-	var direction := (player.global_position - global_position).normalized()
+	var direction := (target.global_position - global_position).normalized()
 	velocity = direction * speed
 	move_and_slide()
 	_update_boss_offscreen_teleport(delta, player)
-	if _contact_cd <= 0.0 and global_position.distance_to(player.global_position) < 54.0 and player.has_method("take_damage"):
-		player.call("take_damage", contact_damage)
+	if _contact_cd <= 0.0 and global_position.distance_to(target.global_position) < 54.0 and target.has_method("take_damage"):
+		target.call("take_damage", contact_damage)
 		_contact_cd = contact_cooldown
 
 
@@ -66,7 +69,7 @@ func _deferred_boss_die() -> void:
 	var bname := boss_name
 	var arena := get_tree().get_first_node_in_group("arena")
 	if arena and arena.has_method("on_boss_died"):
-		arena.call("on_boss_died", bname, pos)
+		arena.call("on_boss_died", bname, pos, "boss")
 	queue_free()
 
 
@@ -93,3 +96,19 @@ func _update_boss_offscreen_teleport(delta: float, player: Node2D) -> void:
 			print("Boss off-screen linger — repositioned ahead of player")
 	else:
 		_offscreen_linger = 0.0
+
+
+func _pick_chase_target(player: Node2D) -> Node2D:
+	var best: Node2D = player
+	var best_d2: float = INF
+	if player:
+		best_d2 = global_position.distance_squared_to(player.global_position)
+	for n in get_tree().get_nodes_in_group("friendly_minion"):
+		if not (n is Node2D):
+			continue
+		var n2 := n as Node2D
+		var d2 := global_position.distance_squared_to(n2.global_position)
+		if d2 < best_d2:
+			best_d2 = d2
+			best = n2
+	return best

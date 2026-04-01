@@ -47,6 +47,7 @@ var ranger_extra_volley_arrows: int = 0
 var paladin_smite_heal_fraction: float = -1.0
 var druid_thorn_slow_factor: float = 0.52
 var necromancer_bone_extra_pierce: int = 0
+var summon_cap_bonus: int = 0
 
 ## Permanent meta skill tree (merged per class in _ready)
 var meta_skill_cdr_mult: float = 1.0
@@ -81,6 +82,8 @@ func _ready():
 	equipped_gem = create_starting_gem()
 	if GameManager.current_class:
 		var cid := GameManager.current_class.character_class_name
+		var is_new_run: bool = GameManager.consume_next_run_is_new()
+		GameManager.give_starting_weapon_if_needed(cid, is_new_run)
 		_apply_meta_tree_modifiers(cid)
 		_apply_unique_class_passive(cid)
 		_apply_equipment_modifiers(cid)
@@ -176,6 +179,7 @@ func _apply_meta_tree_modifiers(class_id: String) -> void:
 	meta_thorn_damage_mult = float(agg.get("thorn_damage_mult", 1.0))
 	necromancer_bone_extra_pierce += int(agg.get("pierce_add", 0))
 	meta_bone_lifesteal_add = int(agg.get("lifesteal_add", 0))
+	summon_cap_bonus = int(agg.get("summon_count_add", 0))
 	print("Meta tree modifiers applied for ", class_id, " (CDR x", snappedf(meta_skill_cdr_mult, 0.01), ", melee reach x", snappedf(meta_melee_range_mult, 0.01), ")")
 
 
@@ -540,6 +544,8 @@ func perform_class_specific_attack() -> void:
 
 	var gname: String = equipped_gem.gem_name
 	print("Attacking with ", gname)
+	print("Skill used: ", gname)
+	get_tree().call_group("run_arena", "on_player_skill_used", gname)
 
 	if gname == "Thorn Burst":
 		_perform_thorn_burst()
@@ -556,6 +562,10 @@ func perform_class_specific_attack() -> void:
 		_perform_arrow_volley()
 		_consume_double_damage_swing()
 		return
+	if gname == "Summon Skeletons":
+		_perform_summon_skeletons()
+		_consume_double_damage_swing()
+		return
 
 	match gname:
 		"Fireball":
@@ -567,6 +577,13 @@ func perform_class_specific_attack() -> void:
 		_:
 			_spawn_default_projectile()
 	_consume_double_damage_swing()
+
+
+func _perform_summon_skeletons() -> void:
+	var class_id: String = ""
+	if GameManager.current_class:
+		class_id = str(GameManager.current_class.character_class_name)
+	get_tree().call_group("run_arena", "summon_skeletons_for_player", self, class_id, 3, 6, summon_cap_bonus)
 
 
 func _consume_double_damage_swing() -> void:
@@ -855,5 +872,5 @@ func take_damage(amount: int) -> void:
 func _start_death_sequence() -> void:
 	pending_level_ups = 0
 	set_physics_process(false)
-	print("Player defeated — notifying arena (end-of-run screen)")
-	get_tree().call_group("run_arena", "on_player_died")
+	print("Player defeated — requesting arena.end_run(false)")
+	get_tree().call_group("run_arena", "end_run", false)

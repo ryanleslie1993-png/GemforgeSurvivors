@@ -75,9 +75,10 @@ func _physics_process(delta: float) -> void:
 	_update_debuff_visual()
 
 	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var target := _pick_chase_target(player)
 	var direction := Vector2.ZERO
-	if player:
-		direction = (player.global_position - global_position).normalized()
+	if target:
+		direction = (target.global_position - global_position).normalized()
 
 	var eff_speed: float = _base_speed
 	if _slow_remaining > 0.0:
@@ -96,16 +97,32 @@ func _physics_process(delta: float) -> void:
 	for i in get_slide_collision_count():
 		var kc := get_slide_collision(i)
 		var collider := kc.get_collider()
-		if collider and collider.is_in_group("player"):
+		if collider and (collider.is_in_group("player") or collider.is_in_group("friendly_minion")):
 			touching = true
 			break
 
-	if not touching and player:
-		touching = global_position.distance_to(player.global_position) < contact_range
+	if not touching and target:
+		touching = global_position.distance_to(target.global_position) < contact_range
 
-	if touching and player and player.has_method("take_damage"):
-		player.call("take_damage", contact_damage)
+	if touching and target and target.has_method("take_damage"):
+		target.call("take_damage", contact_damage)
 		_contact_cd = contact_cooldown
+
+
+func _pick_chase_target(player: Node2D) -> Node2D:
+	var best: Node2D = player
+	var best_d2: float = INF
+	if player:
+		best_d2 = global_position.distance_squared_to(player.global_position)
+	for n in get_tree().get_nodes_in_group("friendly_minion"):
+		if not (n is Node2D):
+			continue
+		var n2 := n as Node2D
+		var d2 := global_position.distance_squared_to(n2.global_position)
+		if d2 < best_d2:
+			best_d2 = d2
+			best = n2
+	return best
 
 
 func _process_burn(delta: float) -> void:

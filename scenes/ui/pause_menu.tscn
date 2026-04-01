@@ -59,6 +59,11 @@ custom_minimum_size = Vector2(280, 48)
 layout_mode = 2
 text = "Resume"
 
+[node name="CharacterStatsButton" type="Button" parent="PausePanel/VBoxContainer"]
+custom_minimum_size = Vector2(280, 48)
+layout_mode = 2
+text = "Character Stats"
+
 [node name="ReturnButton" type="Button" parent="PausePanel/VBoxContainer"]
 custom_minimum_size = Vector2(280, 48)
 layout_mode = 2
