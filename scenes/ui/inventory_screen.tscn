@@ -293,30 +293,153 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="InventoryVBox" type="VBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin"]
+[node name="MainTabs" type="TabContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="InventoryTab" type="VBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs"]
+layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="InventoryTitle" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/InventoryVBox"]
+[node name="InventoryTitle" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/InventoryTab"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Inventory"
 
-[node name="InventoryScroll" type="ScrollContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/InventoryVBox"]
+[node name="InventoryScroll" type="ScrollContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/InventoryTab"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 2
 
-[node name="InventoryGrid" type="GridContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/InventoryVBox/InventoryScroll"]
+[node name="InventoryGrid" type="GridContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/InventoryTab/InventoryScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 columns = 7
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
+
+[node name="GemsmithTab" type="HBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="UnlockedPanel" type="PanelContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+size_flags_horizontal = 1
+size_flags_vertical = 3
+
+[node name="UnlockedMargin" type="MarginContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/UnlockedPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="UnlockedVBox" type="VBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/UnlockedPanel/UnlockedMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="UnlockedTitle" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/UnlockedPanel/UnlockedMargin/UnlockedVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+text = "Unlocked Skills"
+
+[node name="UnlockedSkillsList" type="ItemList" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/UnlockedPanel/UnlockedMargin/UnlockedVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GemsmithRight" type="VBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="GemCreationPanel" type="PanelContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CreationMargin" type="MarginContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="CreationVBox" type="VBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="GemCreationTitle" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+text = "Gem Creation"
+
+[node name="SelectedSkillLabel" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox"]
+layout_mode = 2
+text = "Selected Skill: (none)"
+
+[node name="SelectedSkillDesc" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Choose an unlocked skill to create a gem."
+
+[node name="BlankGemCountLabel" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox"]
+layout_mode = 2
+text = "Blank Gems: 0"
+
+[node name="CreateGemButton" type="Button" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Create Gem"
+
+[node name="GemStoragePanel" type="PanelContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="StorageMargin" type="MarginContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemStoragePanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="StorageVBox" type="VBoxContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemStoragePanel/StorageMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="StorageTitle" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemStoragePanel/StorageMargin/StorageVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Gem Storage / Inventory"
+
+[node name="GemStorageGrid" type="GridContainer" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemStoragePanel/StorageMargin/StorageVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 5
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="GemDetailsLabel" type="Label" parent="MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemStoragePanel/StorageMargin/StorageVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Select a gem from storage to view details."
 
 [node name="BottomBar" type="HBoxContainer" parent="MainMargin/RootVBox"]
 custom_minimum_size = Vector2(0, 54)

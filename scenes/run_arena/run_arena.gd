@@ -232,6 +232,13 @@ func _update_run_hud() -> void:
 		var class_id: String = _run_class_id()
 		var meta: Dictionary = MetaProgression.get_meta_level_data_for_class(class_id)
 		run_hud.call("set_meta_exp_bar", int(meta.get("level", 1)), int(meta.get("exp", 0)), int(meta.get("next", 1000)))
+	if run_hud and run_hud.has_method("set_skill_cast_state") and _player and is_instance_valid(_player):
+		var skill_name := "Basic Attack"
+		var auto_cast := true
+		if "equipped_gem" in _player and _player.equipped_gem:
+			skill_name = str(_player.equipped_gem.gem_name)
+			auto_cast = bool(_player.equipped_gem.auto_cast)
+		run_hud.call("set_skill_cast_state", skill_name, auto_cast)
 	var boss := _get_first_live_boss()
 	if boss and run_hud and run_hud.has_method("set_boss_bar"):
 		run_hud.call("set_boss_bar", str(boss.get("boss_name")), int(boss.get("health")), int(boss.get("max_health")), true)

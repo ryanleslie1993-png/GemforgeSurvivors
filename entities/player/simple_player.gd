@@ -4,7 +4,6 @@ extends CharacterBody2D
 @export var max_health_base: int = 120
 var max_health: int = 120
 var health: int = 120
-var attack_timer: float = 0.0
 var equipped_gem: SkillGemResource
 var _last_move_dir: Vector2 = Vector2.RIGHT
 var _is_dead: bool = false
@@ -59,6 +58,13 @@ var _holy_avenger_time: float = 0.0
 var _bear_form_time: float = 0.0
 var _wolf_form_time: float = 0.0
 var _death_mark_time: float = 0.0
+var _basic_attack_cd: float = 0.0
+## Foundational multi-slot skill system (1..7 = Q,E,R,F,Space,Shift,RMB).
+## Each slot tracks independent cooldown, auto-cast state, and last-cast timestamp.
+var _skill_slots: Array[Dictionary] = []
+var _manual_slot_requests: Dictionary = {} # slot_index -> bool
+var _manual_aim_right_click: bool = false
+var _bear_form_overlay: Polygon2D = null
 
 ## Permanent meta skill tree (merged per class in _ready)
 var meta_skill_cdr_mult: float = 1.0
@@ -87,6 +93,7 @@ var _shadow_move_time: float = 0.0
 func _ready():
 	print("=== PLAYER LOADED ===")
 	add_to_group("player")
+	set_process_unhandled_input(true)
 	max_health = max_health_base
 	health = max_health
 	xp_to_next = _xp_for_next_level()
@@ -104,6 +111,8 @@ func _ready():
 			print("Loaded socketed gear gem: ", equipped_gem.gem_name)
 	_sync_health_bar()
 	print("XP to next level: ", xp_to_next)
+	_setup_form_overlay()
+	_setup_skill_slots()
 
 
 func create_starting_gem() -> SkillGemResource:
@@ -152,6 +161,213 @@ func create_starting_gem() -> SkillGemResource:
 
 	gem.gem_type = "projectile"
 	return gem
+
+
+func _setup_form_overlay() -> void:
+	_bear_form_overlay = Polygon2D.new()
+	_bear_form_overlay.name = "BearFormOverlay"
+	_bear_form_overlay.color = Color(0.5, 0.34, 0.2, 0.32)
+	_bear_form_overlay.polygon = PackedVector2Array([-14, -18, 14, -18, 20, 4, 10, 20, -10, 20, -20, 4])
+	_bear_form_overlay.visible = false
+	add_child(_bear_form_overlay)
+
+
+func _setup_skill_slots() -> void:
+	_skill_slots.clear()
+	_manual_slot_requests.clear()
+
+	var class_id: String = ""
+	if GameManager.current_class:
+		class_id = String(GameManager.current_class.character_class_name)
+
+	var ordered_skill_names: Array[String] = []
+	var seen: Dictionary = {}
+	var push_unique_skill_name := func(skill_name: String) -> void:
+		var key := skill_name.strip_edges()
+		if key == "" or seen.has(key):
+			return
+		seen[key] = true
+		ordered_skill_names.append(key)
+
+	if equipped_gem and equipped_gem.gem_name != "":
+		push_unique_skill_name.call(equipped_gem.gem_name)
+
+	if class_id != "":
+		var equipped_map: Dictionary = GameManager.get_equipped_map(class_id)
+		for v in equipped_map.values():
+			if not (v is Dictionary):
+				continue
+			var slot_data: Dictionary = v
+			var socketed: String = String(slot_data.get("socketed_skill", ""))
+			push_unique_skill_name.call(socketed)
+
+		var loose: Array = GameManager.get_loose_skill_gems(class_id)
+		for g in loose:
+			if g is SkillGemResource:
+				push_unique_skill_name.call((g as SkillGemResource).gem_name)
+
+	for i in range(7):
+		var slot_index := i + 1
+		var gem_name := ""
+		if i < ordered_skill_names.size():
+			gem_name = ordered_skill_names[i]
+		var slot_gem: SkillGemResource = null
+		if gem_name != "":
+			slot_gem = GameManager.build_skill_gem_from_name(gem_name)
+		var slot_state := {
+			"slot_index": slot_index,
+			"gem_id": gem_name,
+			"gem": slot_gem,
+			"current_cooldown": 0.0,
+			"auto_cast_enabled": slot_gem != null and bool(slot_gem.auto_cast),
+			"last_cast_time": -9999.0
+		}
+		_skill_slots.append(slot_state)
+		print("SkillSlot[", slot_index, "] gem=", gem_name if gem_name != "" else "EMPTY", " auto=", slot_state["auto_cast_enabled"], " cd=0.0")
+
+	if _skill_slots.size() > 0 and _skill_slots[0].get("gem") != null:
+		equipped_gem = _skill_slots[0]["gem"]
+
+
+func _slot_key_name(slot_index: int) -> String:
+	match slot_index:
+		1: return "Q"
+		2: return "E"
+		3: return "R"
+		4: return "F"
+		5: return "Space"
+		6: return "Shift"
+		7: return "RMB"
+		_: return "?"
+
+
+func set_skill_slot_auto_cast(slot_index: int, enabled: bool) -> void:
+	if slot_index < 1 or slot_index > _skill_slots.size():
+		return
+	var idx := slot_index - 1
+	var slot_state: Dictionary = _skill_slots[idx]
+	var slot_gem: SkillGemResource = slot_state.get("gem")
+	if slot_gem:
+		slot_gem.auto_cast = enabled
+	slot_state["auto_cast_enabled"] = enabled
+	_skill_slots[idx] = slot_state
+	print("SkillSlot[", slot_index, "/", _slot_key_name(slot_index), "] auto-cast set to ", enabled)
+
+
+func toggle_skill_slot_auto_cast(slot_index: int) -> void:
+	if slot_index < 1 or slot_index > _skill_slots.size():
+		return
+	var current := bool(_skill_slots[slot_index - 1].get("auto_cast_enabled", false))
+	set_skill_slot_auto_cast(slot_index, not current)
+
+
+func get_skill_slot_states() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for slot_state in _skill_slots:
+		out.append({
+			"slot_index": int(slot_state.get("slot_index", 0)),
+			"gem_id": String(slot_state.get("gem_id", "")),
+			"current_cooldown": float(slot_state.get("current_cooldown", 0.0)),
+			"auto_cast_enabled": bool(slot_state.get("auto_cast_enabled", false)),
+			"last_cast_time": float(slot_state.get("last_cast_time", -9999.0))
+		})
+	return out
+
+
+func _update_skill_slots(delta: float) -> void:
+	for i in range(_skill_slots.size()):
+		var slot_state: Dictionary = _skill_slots[i]
+		var cd: float = float(slot_state.get("current_cooldown", 0.0))
+		if cd > 0.0:
+			slot_state["current_cooldown"] = maxf(0.0, cd - delta)
+			_skill_slots[i] = slot_state
+
+	# Manual requests are processed first so keypresses feel responsive.
+	for i in range(_skill_slots.size()):
+		var slot_index := i + 1
+		if bool(_manual_slot_requests.get(slot_index, false)):
+			_try_cast_slot(slot_index, true)
+	_manual_slot_requests.clear()
+
+	# Auto-cast pass across all active slots.
+	for i in range(_skill_slots.size()):
+		var slot_index := i + 1
+		_try_cast_slot(slot_index, false)
+
+	_manual_aim_right_click = false
+
+
+func _try_cast_slot(slot_index: int, manual_request: bool) -> bool:
+	if slot_index < 1 or slot_index > _skill_slots.size():
+		return false
+
+	var idx := slot_index - 1
+	var slot_state: Dictionary = _skill_slots[idx]
+	var slot_gem: SkillGemResource = slot_state.get("gem")
+	if slot_gem == null:
+		if manual_request:
+			print("SkillSlot[", slot_index, "/", _slot_key_name(slot_index), "] manual cast requested, but slot is empty.")
+		return false
+
+	var slot_auto: bool = bool(slot_state.get("auto_cast_enabled", false))
+	var cd_left: float = float(slot_state.get("current_cooldown", 0.0))
+	if cd_left > 0.0:
+		return false
+
+	if not manual_request:
+		if not slot_auto:
+			return false
+		if not _has_valid_skill_target(slot_gem.gem_name):
+			return false
+	else:
+		# Requirement: manual key presses trigger slots when auto-cast is off.
+		# Keeping manual trigger enabled for both modes gives immediate player control.
+		pass
+
+	_cast_skill_from_slot(slot_index, slot_gem, manual_request)
+	slot_state["current_cooldown"] = _cooldown_after_cast()
+	slot_state["last_cast_time"] = float(Time.get_ticks_msec()) / 1000.0
+	_skill_slots[idx] = slot_state
+	return true
+
+
+func _cast_skill_from_slot(slot_index: int, slot_gem: SkillGemResource, manual_request: bool) -> void:
+	var previous_gem := equipped_gem
+	equipped_gem = slot_gem
+	perform_class_specific_attack()
+	equipped_gem = previous_gem
+	var mode := "MANUAL" if manual_request else "AUTO"
+	print("SkillSlot[", slot_index, "/", _slot_key_name(slot_index), "] cast ", slot_gem.gem_name, " mode=", mode)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _is_dead:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_try_basic_attack_manual()
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_manual_aim_right_click = true
+		_request_slot_cast(7)
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		match event.keycode:
+			KEY_Q:
+				_request_slot_cast(1)
+			KEY_E:
+				_request_slot_cast(2)
+			KEY_R:
+				_request_slot_cast(3)
+			KEY_F:
+				_request_slot_cast(4)
+			KEY_SPACE:
+				_request_slot_cast(5)
+			KEY_SHIFT:
+				_request_slot_cast(6)
+
+
+func _request_slot_cast(slot: int) -> void:
+	_manual_slot_requests[slot] = true
 
 
 func _apply_meta_tree_modifiers(class_id: String) -> void:
@@ -425,6 +641,8 @@ func _cooldown_after_cast() -> float:
 	var cd: float = equipped_gem.cooldown
 	if equipped_gem and equipped_gem.gem_name == "Shadow Strike":
 		cd *= assassin_shadow_cooldown_mult
+	var speed_mult := maxf(0.2, stat_attack_speed_mult * _skill_temp_attack_speed_mult() * _attack_timer_haste_mult)
+	cd /= speed_mult
 	cd *= meta_skill_cdr_mult
 	if global_cdr_buff_timer > 0.0:
 		cd *= 0.6
@@ -461,7 +679,7 @@ func _skill_temp_damage_mult() -> float:
 	if _holy_avenger_time > 0.0:
 		mult *= 1.28
 	if _bear_form_time > 0.0:
-		mult *= 1.18
+		mult *= 1.40
 	if _wolf_form_time > 0.0:
 		mult *= 1.15
 	if _death_mark_time > 0.0:
@@ -476,7 +694,7 @@ func _skill_temp_move_mult() -> float:
 	if _wolf_form_time > 0.0:
 		mult *= 1.35
 	if _bear_form_time > 0.0:
-		mult *= 0.86
+		mult *= 0.80
 	return mult
 
 
@@ -496,7 +714,7 @@ func _skill_temp_damage_taken_mult() -> float:
 	if _holy_avenger_time > 0.0:
 		mult *= 0.85
 	if _bear_form_time > 0.0:
-		mult *= 0.72
+		mult *= 0.75
 	if _berserk_mode_time > 0.0:
 		mult *= 1.35
 	if _smoke_bomb_time > 0.0:
@@ -543,6 +761,11 @@ func get_nearest_enemy() -> Node2D:
 
 
 func _base_aim_dir() -> Vector2:
+	if _manual_aim_right_click:
+		var mouse_world := get_global_mouse_position()
+		var md := mouse_world - global_position
+		if md.length_squared() > 0.001:
+			return md.normalized()
 	var t := get_nearest_enemy()
 	if t:
 		return (t.global_position - global_position).normalized()
@@ -552,6 +775,7 @@ func _base_aim_dir() -> Vector2:
 func _physics_process(delta: float):
 	if _is_dead:
 		return
+	_basic_attack_cd = maxf(0.0, _basic_attack_cd - delta)
 
 	if global_cdr_buff_timer > 0.0:
 		global_cdr_buff_timer -= delta
@@ -579,6 +803,8 @@ func _physics_process(delta: float):
 	_bear_form_time = maxf(0.0, _bear_form_time - delta)
 	_wolf_form_time = maxf(0.0, _wolf_form_time - delta)
 	_death_mark_time = maxf(0.0, _death_mark_time - delta)
+	if _bear_form_overlay:
+		_bear_form_overlay.visible = _bear_form_time > 0.0
 
 	var move_mult: float = 1.0
 	if _shadow_move_time > 0.0:
@@ -603,13 +829,26 @@ func _physics_process(delta: float):
 	elif direction.length_squared() > 0.0001:
 		$Visual.rotation = _last_move_dir.angle()
 
-	attack_timer -= delta * _attack_timer_haste_mult * stat_attack_speed_mult * _skill_temp_attack_speed_mult()
-	if attack_timer <= 0.0 and equipped_gem:
-		attack_timer = _cooldown_after_cast()
-		perform_class_specific_attack()
+	_update_skill_slots(delta)
 
 
 const MELEE_RANGE: float = 90.0
+
+
+func _has_valid_skill_target(skill_name: String) -> bool:
+	# Self/area/channel/transform skills do not require enemy lock; they can auto-cast when toggled on.
+	if skill_name in ["Iron Ward", "Blood Cry", "Berserk Mode", "Smoke Bomb", "Lay on Hands", "Holy Avenger", "Bear Form", "Wolf Form", "Rapid Fire", "Elemental Overload", "Nature's Wrath", "Life Drain", "Summon Skeletons", "Summon Wolves", "Raise Dead"]:
+		return true
+	return get_nearest_enemy() != null
+
+
+func _try_basic_attack_manual() -> void:
+	if _basic_attack_cd > 0.0:
+		return
+	_basic_attack_cd = 0.28
+	var aim := _base_aim_dir()
+	_spawn_projectile(aim, _roll_outgoing_damage(_dmg_scaled(12.0)), 560.0, 2.8, 0.8, _gem_projectile_color("Basic Attack"))
+	print("Manual basic attack (LMB)")
 
 
 func perform_class_specific_attack() -> void:

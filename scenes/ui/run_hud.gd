@@ -44,3 +44,8 @@ func show_skill_popup(skill_name: String) -> void:
 	var tween := create_tween()
 	tween.tween_property(label, "modulate:a", 0.0, 1.8)
 	tween.finished.connect(label.queue_free)
+
+
+func set_skill_cast_state(skill_name: String, auto_cast: bool) -> void:
+	var mode := "Auto" if auto_cast else "Manual"
+	$CastStateLabel.text = "Skill: %s [%s]" % [skill_name, mode]

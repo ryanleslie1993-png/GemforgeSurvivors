@@ -310,6 +310,54 @@ func get_loose_skill_gems(class_key: String) -> PackedStringArray:
 	return out
 
 
+func get_unlocked_skill_options_for_class(class_key: String) -> Array[Dictionary]:
+	var key := _class_key_or_default(class_key)
+	var out: Array[Dictionary] = []
+	var tree: Dictionary = MetaProgression.Catalog.get_tree(key)
+	if tree.is_empty():
+		return out
+	var unlocked: Array = MetaProgression.get_unlocked_list(key)
+	for row in tree.get("nodes", []):
+		var node_id: String = str(row.get("id", ""))
+		if node_id not in unlocked:
+			continue
+		var kind: String = str(row.get("kind", ""))
+		if kind != MetaProgression.Catalog.KIND_CENTER and kind != MetaProgression.Catalog.KIND_CORNER:
+			continue
+		out.append({
+			"skill_name": str(row.get("title", "Skill Gem")),
+			"description": str(row.get("description", row.get("desc", ""))),
+		})
+	return out
+
+
+func create_skill_gem_for_class(class_key: String, skill_name: String) -> bool:
+	var key := _class_key_or_default(class_key)
+	_ensure_class_state(key)
+	var name := skill_name.strip_edges()
+	if name == "":
+		print("Gemsmith: empty skill name, cannot create gem")
+		return false
+	if int(blank_gems_by_class[key]) <= 0:
+		print("Gemsmith: no blank gems available for ", key)
+		return false
+	var allowed := false
+	for row in get_unlocked_skill_options_for_class(key):
+		if str(row.get("skill_name", "")) == name:
+			allowed = true
+			break
+	if not allowed:
+		print("Gemsmith: skill is not unlocked for class ", key, " -> ", name)
+		return false
+	blank_gems_by_class[key] = int(blank_gems_by_class[key]) - 1
+	var loose: Array = loose_skill_gems_by_class[key]
+	loose.append(name)
+	loose_skill_gems_by_class[key] = loose
+	save_equipment_state()
+	print("Created gem for skill: ", name, ". Blank Gems remaining: ", blank_gems_by_class[key])
+	return true
+
+
 func _gear_type_label(slot_type: String) -> String:
 	match slot_type:
 		"weapon":
@@ -675,7 +723,7 @@ func _skill_name_to_gem(skill_name: String) -> SkillGemResource:
 			gem.cooldown = 1.4
 		"Bear Form":
 			gem.damage = 0.0
-			gem.cooldown = 12.0
+			gem.cooldown = 25.0
 			gem.gem_type = "transformation"
 		"Wolf Form":
 			gem.damage = 0.0
@@ -718,7 +766,28 @@ func _skill_name_to_gem(skill_name: String) -> SkillGemResource:
 		_:
 			gem.damage = 20.0
 			gem.cooldown = 1.0
+	# Auto-cast defaults: ON for attacks, OFF for buffs/transformations/channel.
+	var manual_by_default := {
+		"Iron Ward": true,
+		"Guardian's Wall": true,
+		"Blood Cry": true,
+		"Berserk Mode": true,
+		"Smoke Bomb": true,
+		"Lay on Hands": true,
+		"Holy Avenger": true,
+		"Bear Form": true,
+		"Wolf Form": true,
+		"Rapid Fire": true,
+		"Elemental Overload": true,
+		"Nature's Wrath": true,
+		"Life Drain": true,
+	}
+	gem.auto_cast = not manual_by_default.has(gem.gem_name)
 	return gem
+
+
+func build_skill_gem_from_name(skill_name: String) -> SkillGemResource:
+	return _skill_name_to_gem(skill_name)
 
 
 func get_equipped_skill_gem_for_class(class_key: String) -> SkillGemResource:

@@ -97,3 +97,17 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 2
 theme_override_constants/separation = 6
+
+[node name="CastStateLabel" type="Label" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 196.0
+offset_right = -16.0
+offset_bottom = 220.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.86, 0.92, 1, 0.85)
+horizontal_alignment = 2
+text = "Skill: - [Auto]"

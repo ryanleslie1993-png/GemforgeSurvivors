@@ -28,6 +28,16 @@ const DISPLAY_SLOT_LABEL := {
 
 var _current_class_id: String = "Guardian"
 var _inventory_grid: GridContainer
+var _gem_tabs: TabContainer
+var _unlocked_skills_list: ItemList
+var _selected_skill_label: Label
+var _selected_skill_desc: Label
+var _blank_gem_count_label: Label
+var _create_gem_button: Button
+var _gem_storage_grid: GridContainer
+var _gem_details_label: Label
+var _selected_gemsmith_skill_name: String = ""
+var _gemsmith_rows: Array[Dictionary] = []
 
 var _selected_inventory_index: int = -1
 var _selected_equipped_slot_type: String = ""
@@ -54,6 +64,14 @@ func _ready() -> void:
 	if _inventory_grid == null:
 		print("Inventory grid not found - using fallback")
 		_inventory_grid = _create_fallback_inventory_grid()
+	_gem_tabs = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs")
+	_unlocked_skills_list = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/UnlockedPanel/UnlockedMargin/UnlockedVBox/UnlockedSkillsList")
+	_selected_skill_label = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox/SelectedSkillLabel")
+	_selected_skill_desc = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox/SelectedSkillDesc")
+	_blank_gem_count_label = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox/BlankGemCountLabel")
+	_create_gem_button = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemCreationPanel/CreationMargin/CreationVBox/CreateGemButton")
+	_gem_storage_grid = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemStoragePanel/StorageMargin/StorageVBox/GemStorageGrid")
+	_gem_details_label = get_node_or_null("MainMargin/RootVBox/InventorySection/InventoryMargin/MainTabs/GemsmithTab/GemsmithRight/GemStoragePanel/StorageMargin/StorageVBox/GemDetailsLabel")
 
 	_blacksmith_button.pressed.connect(_on_blacksmith_pressed)
 	_gemsmith_button.pressed.connect(_on_gemsmith_pressed)
@@ -62,6 +80,10 @@ func _ready() -> void:
 	_equip_button.pressed.connect(_on_equip_pressed)
 	_unequip_button.pressed.connect(_on_unequip_pressed)
 	_socket_button.pressed.connect(_on_socket_pressed)
+	if _create_gem_button:
+		_create_gem_button.pressed.connect(_on_create_gem_pressed)
+	if _unlocked_skills_list:
+		_unlocked_skills_list.item_selected.connect(_on_unlocked_skill_selected)
 
 	_connect_equipped_slot_clicks()
 	_refresh_all()
@@ -117,6 +139,7 @@ func _connect_equipped_slot_clicks() -> void:
 func _refresh_all() -> void:
 	_refresh_equipped_display()
 	_refresh_inventory_grid()
+	_refresh_gemsmith_ui()
 	_refresh_inspector()
 
 
@@ -276,6 +299,8 @@ func _on_socket_pressed() -> void:
 
 
 func _on_blacksmith_pressed() -> void:
+	if _gem_tabs:
+		_gem_tabs.current_tab = 0
 	var crafted: Dictionary = GameManager.gamble_gear_for_class(_current_class_id, "")
 	var crafted_name: String = str(crafted.get("item_name", "Unknown Gear"))
 	var crafted_type: String = str(crafted.get("gear_type", str(crafted.get("slot_type", "Gear"))))
@@ -289,9 +314,9 @@ func _on_blacksmith_pressed() -> void:
 
 
 func _on_gemsmith_pressed() -> void:
-	var infused: String = GameManager.infuse_random_unlocked_skill_gem(_current_class_id)
-	print("Gemsmith infused: ", infused if infused != "" else "(none)")
-	_refresh_inspector()
+	if _gem_tabs:
+		_gem_tabs.current_tab = 1
+	_refresh_gemsmith_ui()
 
 
 func _on_main_menu_pressed() -> void:
@@ -310,3 +335,74 @@ func _format_stats(raw_stats: String) -> String:
 	if text == "" or text == "{}":
 		return "-"
 	return text
+
+
+func _refresh_gemsmith_ui() -> void:
+	if _blank_gem_count_label:
+		_blank_gem_count_label.text = "Blank Gems: %d" % GameManager.get_blank_gem_count(_current_class_id)
+	_gemsmith_rows = GameManager.get_unlocked_skill_options_for_class(_current_class_id)
+	if _unlocked_skills_list:
+		_unlocked_skills_list.clear()
+		for row in _gemsmith_rows:
+			_unlocked_skills_list.add_item(str(row.get("skill_name", "Skill")))
+	if _selected_skill_label and _selected_gemsmith_skill_name == "":
+		_selected_skill_label.text = "Selected Skill: (none)"
+	if _selected_skill_desc and _selected_gemsmith_skill_name == "":
+		_selected_skill_desc.text = "Choose an unlocked skill to create a gem."
+	if _create_gem_button:
+		_create_gem_button.disabled = (_selected_gemsmith_skill_name == "" or GameManager.get_blank_gem_count(_current_class_id) <= 0)
+	_refresh_gem_storage_grid()
+
+
+func _refresh_gem_storage_grid() -> void:
+	if _gem_storage_grid == null:
+		return
+	for c in _gem_storage_grid.get_children():
+		c.queue_free()
+	var blank_count: int = GameManager.get_blank_gem_count(_current_class_id)
+	var blank_panel := Button.new()
+	blank_panel.custom_minimum_size = Vector2(110, 68)
+	blank_panel.text = "Blank Gem\nx%d" % blank_count
+	blank_panel.pressed.connect(_on_gem_storage_selected.bind("Blank Gem", "Blank Gem used to craft an infused skill gem."))
+	_gem_storage_grid.add_child(blank_panel)
+
+	var loose: PackedStringArray = GameManager.get_loose_skill_gems(_current_class_id)
+	var counts: Dictionary = {}
+	for n in loose:
+		var key := str(n)
+		counts[key] = int(counts.get(key, 0)) + 1
+	var names: Array = counts.keys()
+	names.sort()
+	for nm in names:
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(110, 68)
+		btn.text = "%s\nx%d" % [str(nm), int(counts[nm])]
+		btn.pressed.connect(_on_gem_storage_selected.bind(str(nm), "Infused skill gem. Can be socketed into gear with an empty socket."))
+		_gem_storage_grid.add_child(btn)
+
+
+func _on_unlocked_skill_selected(index: int) -> void:
+	if index < 0 or index >= _gemsmith_rows.size():
+		return
+	var row: Dictionary = _gemsmith_rows[index]
+	_selected_gemsmith_skill_name = str(row.get("skill_name", ""))
+	if _selected_skill_label:
+		_selected_skill_label.text = "Selected Skill: %s" % _selected_gemsmith_skill_name
+	if _selected_skill_desc:
+		_selected_skill_desc.text = str(row.get("description", "No description available."))
+	if _create_gem_button:
+		_create_gem_button.disabled = (_selected_gemsmith_skill_name == "" or GameManager.get_blank_gem_count(_current_class_id) <= 0)
+
+
+func _on_create_gem_pressed() -> void:
+	if _selected_gemsmith_skill_name == "":
+		return
+	var ok: bool = GameManager.create_skill_gem_for_class(_current_class_id, _selected_gemsmith_skill_name)
+	if ok:
+		print("Created gem for skill: ", _selected_gemsmith_skill_name, ". Blank Gems remaining: ", GameManager.get_blank_gem_count(_current_class_id))
+	_refresh_gemsmith_ui()
+
+
+func _on_gem_storage_selected(gem_name: String, details: String) -> void:
+	if _gem_details_label:
+		_gem_details_label.text = "%s\n%s" % [gem_name, details]
