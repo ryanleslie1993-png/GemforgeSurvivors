@@ -343,27 +343,17 @@ func _cast_skill_from_slot(slot_index: int, slot_gem: SkillGemResource, manual_r
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_dead:
 		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event.is_action_pressed(InputManager.ACTION_BASIC_ATTACK):
 		_try_basic_attack_manual()
 		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+	if event.is_action_pressed(InputManager.SKILL_SLOT_ACTIONS[6]):
 		_manual_aim_right_click = true
 		_request_slot_cast(7)
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_Q:
-				_request_slot_cast(1)
-			KEY_E:
-				_request_slot_cast(2)
-			KEY_R:
-				_request_slot_cast(3)
-			KEY_F:
-				_request_slot_cast(4)
-			KEY_SPACE:
-				_request_slot_cast(5)
-			KEY_SHIFT:
-				_request_slot_cast(6)
+	for i in range(6):
+		if event.is_action_pressed(InputManager.SKILL_SLOT_ACTIONS[i]):
+			_request_slot_cast(i + 1)
+			return
 
 
 func _request_slot_cast(slot: int) -> void:
@@ -814,7 +804,12 @@ func _physics_process(delta: float):
 	if max_health > 0 and float(health) / float(max_health) <= 0.35:
 		move_mult *= meta_low_hp_move_mult
 
-	var direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var direction = Input.get_vector(
+		InputManager.ACTION_MOVE_LEFT,
+		InputManager.ACTION_MOVE_RIGHT,
+		InputManager.ACTION_MOVE_UP,
+		InputManager.ACTION_MOVE_DOWN
+	)
 	velocity = direction * speed * move_speed_level_mult * move_mult
 	move_and_slide()
 
@@ -961,7 +956,11 @@ func perform_class_specific_attack() -> void:
 	_consume_double_damage_swing()
 
 
+# Skill handlers - expand these as we implement unique behaviors
+
 func _perform_summon_skeletons() -> void:
+	print("Necromancer - Summon Skeletons used")
+	# TODO: Pet AI / cap scaling
 	var class_id: String = ""
 	if GameManager.current_class:
 		class_id = str(GameManager.current_class.character_class_name)
@@ -969,6 +968,8 @@ func _perform_summon_skeletons() -> void:
 
 
 func _perform_summon_wolves() -> void:
+	print("Druid - Summon Wolves used")
+	# TODO: Wolf pack behaviors / duration upgrades
 	get_tree().call_group("run_arena", "summon_wolves_for_player", self, 2, 12.0)
 
 
@@ -982,12 +983,16 @@ func _cast_heavy_hit_with_slow(mult: float, slow_factor: float, slow_time: float
 		nearest.call("apply_slow", slow_time, slow_factor)
 
 
-func _cast_heavy_slam() -> void:
+func _perform_heavy_slam() -> void:
+	print("Guardian - Heavy Slam used")
+	# TODO: Heavy melee attack with stun
 	_play_melee_slash_vfx(Color(0.9, 0.84, 0.7), 16.0, 102.0)
 	_cast_heavy_hit_with_slow(1.55, 0.6, 1.6)
 
 
 func _cast_iron_ward() -> void:
+	print("Guardian - Iron Ward activated")
+	# TODO: Defensive aura with DR + taunt
 	_iron_ward_time = 8.0
 	for n in get_tree().get_nodes_in_group("enemies"):
 		if n is Node2D and (n as Node2D).global_position.distance_to(global_position) < 240.0 and n.has_method("apply_slow"):
@@ -995,12 +1000,16 @@ func _cast_iron_ward() -> void:
 
 
 func _cast_judgment() -> void:
+	print("Guardian - Judgment used")
+	# TODO: Ground AoE slow beam
 	var target := get_nearest_enemy()
 	var pos := target.global_position if target else global_position + _base_aim_dir() * 80.0
 	_spawn_instant_aoe_at(pos, 160.0, _dmg_scaled(equipped_gem.damage * 1.25), "Judgment")
 
 
 func _cast_guardians_wall() -> void:
+	print("Guardian - Guardian's Wall used")
+	# TODO: Temporary blocking wall
 	for n in get_tree().get_nodes_in_group("enemies"):
 		if n is Node2D:
 			var d := (n as Node2D).global_position.distance_to(global_position)
@@ -1010,10 +1019,14 @@ func _cast_guardians_wall() -> void:
 
 
 func _cast_blood_cry() -> void:
+	print("Berserker - Blood Cry activated")
+	# TODO: AoE debuff / rage spike
 	_blood_cry_time = 8.0
 
 
 func _cast_frenzied_charge() -> void:
+	print("Berserker - Frenzied Charge used")
+	# TODO: Dash strike chain
 	var dir := _base_aim_dir()
 	global_position += dir * 120.0
 	_shadow_move_time = maxf(_shadow_move_time, 0.8)
@@ -1023,6 +1036,8 @@ func _cast_frenzied_charge() -> void:
 
 
 func _cast_reckless_swing() -> void:
+	print("Berserker - Reckless Swing used")
+	# TODO: Wide cleave with self-damage tradeoff tuning
 	_play_melee_slash_vfx(Color(1.0, 0.35, 0.3), 18.0, 118.0)
 	_cast_heavy_hit_with_slow(1.9, 0.9, 0.4)
 	# self recoil, but intentionally non-lethal
@@ -1031,6 +1046,8 @@ func _cast_reckless_swing() -> void:
 
 
 func _cast_berserk_mode() -> void:
+	print("Berserker - Berserk Mode activated")
+	# TODO: Steroids mode — tune damage taken / dealt
 	_berserk_mode_time = 10.0
 
 
@@ -1038,6 +1055,8 @@ func _cast_lightning_chain() -> void:
 	var first := get_nearest_enemy()
 	if first == null:
 		return
+	print("Elementalist - Lightning Chain used")
+	# TODO: Chain count / range scaling
 	var hit_positions: Array[Vector2] = [first.global_position]
 	var current: Node2D = first
 	var total_hits := 4
@@ -1061,10 +1080,14 @@ func _cast_lightning_chain() -> void:
 
 
 func _cast_frost_nova() -> void:
+	print("Elementalist - Frost Nova used")
+	# TODO: Chilling pulse + shatter synergy
 	_spawn_instant_aoe_at(global_position, 170.0, _dmg_scaled(equipped_gem.damage), "Frost Nova", 0.45, 2.2)
 
 
 func _cast_elemental_overload() -> void:
+	print("Elementalist - Elemental Overload used")
+	# TODO: Rotating element burst pattern
 	var pick := randi() % 3
 	if pick == 0:
 		_spawn_fireball()
@@ -1075,6 +1098,8 @@ func _cast_elemental_overload() -> void:
 
 
 func _cast_meteor() -> void:
+	print("Elementalist - Meteor used")
+	# TODO: Delayed ground telegraph + burn patch
 	var target := get_nearest_enemy()
 	var pos := target.global_position if target else (global_position + _base_aim_dir() * 180.0)
 	var timer := get_tree().create_timer(0.9)
@@ -1086,6 +1111,8 @@ func _cast_meteor() -> void:
 
 
 func _cast_shadow_teleport_strike() -> void:
+	print("Assassin - Shadow Strike used")
+	# TODO: Teleport + invuln frames
 	var t := get_nearest_enemy()
 	if t == null:
 		return
@@ -1095,6 +1122,8 @@ func _cast_shadow_teleport_strike() -> void:
 
 
 func _cast_poison_dagger() -> void:
+	print("Assassin - Poison Dagger used")
+	# TODO: Stacking poison / spread
 	var nearest := get_nearest_enemy()
 	if nearest == null:
 		return
@@ -1107,10 +1136,14 @@ func _cast_poison_dagger() -> void:
 
 
 func _cast_smoke_bomb() -> void:
+	print("Assassin - Smoke Bomb used")
+	# TODO: Larger miss radius / reposition
 	_smoke_bomb_time = 6.0
 
 
 func _cast_backstab() -> void:
+	print("Assassin - Backstab used")
+	# TODO: Position-from-behind bonus
 	var nearest := get_nearest_enemy()
 	if nearest == null:
 		return
@@ -1121,6 +1154,8 @@ func _cast_backstab() -> void:
 
 
 func _cast_death_mark() -> void:
+	print("Assassin - Death Mark used")
+	# TODO: Mark detonation / spread on kill
 	_death_mark_time = 6.0
 	var nearest := get_nearest_enemy()
 	if nearest and nearest.has_method("take_damage"):
@@ -1128,12 +1163,16 @@ func _cast_death_mark() -> void:
 
 
 func _cast_explosive_arrow() -> void:
+	print("Ranger - Explosive Arrow used")
+	# TODO: Arrow sticks then detonates
 	var target := get_nearest_enemy()
 	var pos := target.global_position if target else (global_position + _base_aim_dir() * 160.0)
 	_spawn_instant_aoe_at(pos, 130.0, _dmg_scaled(equipped_gem.damage * 1.2), "Explosive Arrow")
 
 
 func _cast_multishot() -> void:
+	print("Ranger - Multishot used")
+	# TODO: Fan pattern + pierce tuning
 	var base := _base_aim_dir()
 	var dmg := _dmg_scaled(equipped_gem.damage * 0.65)
 	for i in range(5 + extra_projectiles):
@@ -1142,54 +1181,76 @@ func _cast_multishot() -> void:
 
 
 func _cast_trap_deployment() -> void:
+	print("Ranger - Trap Deployment used")
+	# TODO: Persistent trap actor + arm time
 	var pos := global_position + _base_aim_dir() * 120.0
 	_spawn_instant_aoe_at(pos, 130.0, _dmg_scaled(equipped_gem.damage), "Trap Deployment", 0.55, 2.4)
 
 
 func _cast_rapid_fire() -> void:
+	print("Ranger - Rapid Fire activated")
+	# TODO: Channel-style burst firing
 	_rapid_fire_time = 4.5
 
 
 func _cast_consecrated_ground() -> void:
+	print("Paladin - Consecrated Ground used")
+	# TODO: HoT zone + enemy slow
 	_spawn_instant_aoe_at(global_position, 180.0, _dmg_scaled(equipped_gem.damage * 0.9), "Consecrated Ground", 0.75, 1.4)
 	heal(maxi(1, int(round(float(max_health) * 0.08))))
 
 
 func _cast_lay_on_hands() -> void:
+	print("Paladin - Lay on Hands used")
+	# TODO: Cleanse + burst heal
 	heal(maxi(12, int(round(float(max_health) * 0.22))))
 
 
 func _cast_holy_avenger() -> void:
+	print("Paladin - Holy Avenger activated")
+	# TODO: Reflect / thorns burst window
 	_holy_avenger_time = 9.0
 
 
 func _cast_bear_form() -> void:
+	print("Druid - Bear Form activated")
+	# TODO: Transformation stats + skill swap
 	_bear_form_time = 10.0
 
 
 func _cast_wolf_form() -> void:
+	print("Druid - Wolf Form used")
+	# TODO: Speed steed + bleed pack synergy
 	_wolf_form_time = 9.0
 	_perform_summon_wolves()
 
 
 func _cast_vine_prison() -> void:
+	print("Druid - Vine Prison used")
+	# TODO: Root cage + dot
 	var target := get_nearest_enemy()
 	var pos := target.global_position if target else global_position + _base_aim_dir() * 110.0
 	_spawn_instant_aoe_at(pos, 150.0, _dmg_scaled(equipped_gem.damage * 1.05), "Vine Prison", 0.4, 2.6)
 
 
 func _cast_natures_wrath() -> void:
+	print("Druid - Nature's Wrath used")
+	# TODO: Storm + entangle hybrid fantasy
 	_cast_lightning_chain()
 	_cast_vine_prison()
 
 
 func _cast_corpse_explosion() -> void:
+	print("Necromancer - Corpse Explosion used")
+	# TODO: Requires corpse prop / marker
 	var target := get_nearest_enemy()
 	var pos := target.global_position if target else global_position + _base_aim_dir() * 90.0
 	_spawn_instant_aoe_at(pos, 155.0, _dmg_scaled(equipped_gem.damage * 1.35), "Corpse Explosion")
 
 
 func _cast_life_drain() -> void:
+	print("Necromancer - Life Drain used")
+	# TODO: Channeled tether
 	var target := get_nearest_enemy()
 	if target == null:
 		return
@@ -1200,6 +1261,8 @@ func _cast_life_drain() -> void:
 
 
 func _cast_raise_dead() -> void:
+	print("Necromancer - Raise Dead used")
+	# TODO: Stronger temp minion / corpse cost
 	get_tree().call_group("run_arena", "summon_raised_dead_for_player", self, 1, 3)
 
 
@@ -1291,6 +1354,8 @@ func _spawn_ranged_with_duplicates(
 
 
 func _spawn_fireball() -> void:
+	print("Elementalist - Fireball used")
+	# TODO: Impact burn pool / spread
 	var d := _dmg_scaled(equipped_gem.damage)
 	_spawn_ranged_with_duplicates(
 		_base_aim_dir(),
@@ -1308,6 +1373,8 @@ func _spawn_fireball() -> void:
 
 
 func _spawn_holy_smite() -> void:
+	print("Paladin - Holy Smite used")
+	# TODO: Holy charge / consecration combo
 	var d := int(round(float(_dmg_scaled(equipped_gem.damage)) * meta_holy_damage_mult))
 	var hf: float = 0.5 if paladin_smite_heal_fraction < 0.0 else paladin_smite_heal_fraction
 	_spawn_ranged_with_duplicates(
@@ -1326,6 +1393,8 @@ func _spawn_holy_smite() -> void:
 
 
 func _spawn_bone_spear() -> void:
+	print("Necromancer - Bone Spear used")
+	# TODO: Bone shards / curse on pierce
 	var d := _dmg_scaled(equipped_gem.damage * 1.05)
 	var pierce: int = 8 + necromancer_bone_extra_pierce
 	_spawn_ranged_with_duplicates(
@@ -1344,6 +1413,8 @@ func _spawn_bone_spear() -> void:
 
 
 func _spawn_default_projectile() -> void:
+	print("Skill fallback projectile: ", equipped_gem.gem_name)
+	# TODO: Map unknown gem to proper behavior
 	var d := _dmg_scaled(equipped_gem.damage)
 	var gn := equipped_gem.gem_name
 	_spawn_ranged_with_duplicates(
@@ -1362,6 +1433,8 @@ func _spawn_default_projectile() -> void:
 
 
 func _perform_arrow_volley() -> void:
+	print("Ranger - Arrow Volley used")
+	# TODO: Tar / bleed arrows rotation
 	var base := _base_aim_dir()
 	var dmg := _dmg_scaled(equipped_gem.damage * 0.72)
 	var col := _gem_projectile_color("Arrow Volley")
@@ -1372,6 +1445,8 @@ func _perform_arrow_volley() -> void:
 
 
 func _perform_thorn_burst() -> void:
+	print("Druid - Thorn Burst used")
+	# TODO: Bramble DOT zone upgrade
 	var target := get_nearest_enemy()
 	var pos: Vector2
 	if target:
@@ -1396,6 +1471,8 @@ func _perform_thorn_burst() -> void:
 
 
 func _perform_melee_attack_named(gname: String) -> void:
+	print("Melee skill: ", gname, " used")
+	# TODO: Per-skill animation / hitbox (values in match below)
 	var slash_w := 11.0
 	var slash_len := 88.0
 	match gname:

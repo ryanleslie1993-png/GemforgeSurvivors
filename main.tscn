@@ -80,3 +80,9 @@ custom_minimum_size = Vector2(520, 80)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Meta Skill Tree"
+
+[node name="SettingsButton" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(520, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Settings"

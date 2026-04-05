@@ -1,5 +1,7 @@
 extends Control
 
+const SETTINGS_MENU_SCENE := preload("res://scenes/ui/settings_menu.tscn")
+
 
 func _ready() -> void:
 	print("Main Menu loaded")
@@ -9,6 +11,12 @@ func _ready() -> void:
 	$MenuButtons/GemsmithButton.pressed.connect(_on_gemsmith_pressed)
 	$MenuButtons/InventoryButton.pressed.connect(_on_inventory_pressed)
 	$MenuButtons/MetaSkillTreeButton.pressed.connect(_on_meta_skill_tree_pressed)
+	$MenuButtons/SettingsButton.pressed.connect(_on_settings_pressed)
+
+
+func _on_settings_pressed() -> void:
+	var settings := SETTINGS_MENU_SCENE.instantiate() as CanvasLayer
+	get_tree().root.add_child(settings)
 
 
 func _on_character_select_pressed() -> void:

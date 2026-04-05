@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-InputSetup="*res://scripts/setup_input.gd"
+InputManager="*res://autoload/InputManager.gd"
 GameManager="*res://autoload/game_manager.gd"
 MetaProgression="*res://autoload/meta_progression.gd"
 ForceRescan="*uid://bwqv61f2rtsdv"

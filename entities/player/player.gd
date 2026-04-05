@@ -13,7 +13,12 @@ func _ready():
 
 
 func _physics_process(_delta: float):
-	var direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var direction = Input.get_vector(
+		InputManager.ACTION_MOVE_LEFT,
+		InputManager.ACTION_MOVE_RIGHT,
+		InputManager.ACTION_MOVE_UP,
+		InputManager.ACTION_MOVE_DOWN
+	)
 	velocity = direction * speed
 	move_and_slide()
 

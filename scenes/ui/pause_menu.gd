@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const CHARACTER_STATS_OVERLAY_SCENE := preload("res://scenes/ui/character_stats_overlay.tscn")
+const SETTINGS_MENU_SCENE := preload("res://scenes/ui/settings_menu.tscn")
 
 var _character_stats_overlay: CanvasLayer = null
 
@@ -10,6 +11,7 @@ func _ready() -> void:
 	visible = false
 	$PausePanel/VBoxContainer/ResumeButton.pressed.connect(_on_resume_pressed)
 	$PausePanel/VBoxContainer/CharacterStatsButton.pressed.connect(_on_character_stats_pressed)
+	$PausePanel/VBoxContainer/SettingsButton.pressed.connect(_on_settings_pressed)
 	$PausePanel/VBoxContainer/ReturnButton.pressed.connect(_on_return_to_menu)
 
 
@@ -35,3 +37,9 @@ func _on_character_stats_pressed() -> void:
 	if _character_stats_overlay.has_method("open_overlay"):
 		_character_stats_overlay.call("open_overlay")
 	print("Opened Character Stats overlay")
+
+
+func _on_settings_pressed() -> void:
+	var settings := SETTINGS_MENU_SCENE.instantiate() as CanvasLayer
+	get_tree().root.add_child(settings)
+	print("Opened Settings from pause menu")
